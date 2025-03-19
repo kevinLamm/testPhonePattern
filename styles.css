@@ -3,11 +3,11 @@ body {
     font-family: Arial, sans-serif;
 }
 
-video, canvas {
-    width: 90%;
-    max-width: 500px;
+canvas {
+    width: 95%;
+    max-width: 1200px;
     display: block;
-    margin: 10px auto;
+    
 }
 
 button {

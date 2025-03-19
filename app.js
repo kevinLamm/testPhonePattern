@@ -1,13 +1,26 @@
 let video = document.getElementById("video");
 let canvas = document.getElementById("canvas");
 let ctx = canvas.getContext("2d");
-let streaming = false;
+let switchButton = document.createElement("button"); // Create a switch button
+switchButton.innerText = "Switch Camera";
+document.body.appendChild(switchButton);
 
-// Access camera
-async function startCamera() {
+let currentStream = null;
+let useBackCamera = true; // Default to the back camera
+
+// Function to start the camera
+async function startCamera(facingMode = "environment") {
+    if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop()); // Stop previous stream
+    }
+
     try {
-        let stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        let constraints = {
+            video: { facingMode } // "environment" = back, "user" = front
+        };
+        let stream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = stream;
+        currentStream = stream;
         video.onloadedmetadata = () => {
             video.play();
             canvas.width = video.videoWidth;
@@ -17,6 +30,15 @@ async function startCamera() {
         console.error("Error accessing camera:", err);
     }
 }
+
+// Function to toggle between front and back cameras
+switchButton.addEventListener("click", () => {
+    useBackCamera = !useBackCamera;
+    startCamera(useBackCamera ? "environment" : "user");
+});
+
+
+
 
 // Process frame with OpenCV
 function processFrame() {
@@ -42,8 +64,9 @@ function onOpenCvReady() {
     processFrame();
 }
 
-// Start camera on page load
-startCamera();
+
+// Start with the back camera (or front if unavailable)
+startCamera("environment");
 
 document.getElementById("filter-btn").addEventListener("click", () => {
     streaming = !streaming;
