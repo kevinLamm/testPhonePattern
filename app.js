@@ -35,7 +35,7 @@ async function startCamera(facingMode = "environment") {
     }
 }
 
-// Process frame with OpenCV
+// Process frame with OpenCV (live video with magenta contour)
 function processFrame() {
     if (!processing) return;
     
@@ -78,11 +78,14 @@ function processFrame() {
     }
 
     if (largestContour) {
-        // Draw the largest centered contour in magenta
         let color = new cv.Scalar(255, 0, 255, 255); // Magenta color
-        cv.drawContours(src, contours, -1, color, 2);
-        cv.imshow("canvas", src);
+        let largestContourVector = new cv.MatVector();
+        largestContourVector.push_back(largestContour);
+        cv.drawContours(src, largestContourVector, 0, color, 2);
+        largestContourVector.delete();
     }
+
+    cv.imshow("canvas", src);
 
     // Cleanup
     src.delete();
@@ -95,7 +98,7 @@ function processFrame() {
     requestAnimationFrame(processFrame);
 }
 
-// Capture and process the object
+// Capture and process the largest centered object
 captureButton.addEventListener("click", () => {
     let src = cv.imread(canvas);
     let gray = new cv.Mat();
@@ -164,8 +167,11 @@ captureButton.addEventListener("click", () => {
             let output = new cv.Mat.zeros(warped.rows, warped.cols, cv.CV_8UC3);
             
             // Draw green contour
-            let green = new cv.Scalar(0, 255, 0, 255); // Green color
-            cv.drawContours(output, contours, -1, green, 2);
+            let green = new cv.Scalar(0, 255, 0, 255);
+            let singleContourVector = new cv.MatVector();
+            singleContourVector.push_back(largestContour);
+            cv.drawContours(output, singleContourVector, 0, green, 2);
+            singleContourVector.delete();
 
             // Show and save processed image
             cv.imshow("canvas", output);
