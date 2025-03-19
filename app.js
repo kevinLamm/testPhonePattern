@@ -78,6 +78,53 @@ function processFrame() {
     }
 
     if (largestContour) {
+        // Draw the largest centered contour in magenta
+        let color = new cv.Scalar(255, 0, 255, 255); // Magenta color
+        cv.drawContours(src, contours, -1, color, 2);
+        cv.imshow("canvas", src);
+    }
+
+    // Cleanup
+    src.delete();
+    gray.delete();
+    blurred.delete();
+    edges.delete();
+    contours.delete();
+    hierarchy.delete();
+
+    requestAnimationFrame(processFrame);
+}
+
+// Capture and process the object
+captureButton.addEventListener("click", () => {
+    let src = cv.imread(canvas);
+    let gray = new cv.Mat();
+    let blurred = new cv.Mat();
+    let edges = new cv.Mat();
+
+    // Convert to grayscale and detect edges
+    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+    cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
+    cv.Canny(blurred, edges, 50, 150);
+
+    let contours = new cv.MatVector();
+    let hierarchy = new cv.Mat();
+    cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+
+    let largestContour = null;
+    let maxArea = 0;
+    
+    for (let i = 0; i < contours.size(); i++) {
+        let contour = contours.get(i);
+        let area = cv.contourArea(contour);
+
+        if (area > maxArea) {
+            maxArea = area;
+            largestContour = contour;
+        }
+    }
+
+    if (largestContour) {
         let approx = new cv.Mat();
         let peri = cv.arcLength(largestContour, true);
         cv.approxPolyDP(largestContour, approx, 0.02 * peri, true);
@@ -113,10 +160,25 @@ function processFrame() {
             let warped = new cv.Mat();
             cv.warpPerspective(src, warped, matrix, new cv.Size(canvas.width, canvas.height));
 
-            cv.imshow("canvas", warped); // Show warped object
+            // Create a black background
+            let output = new cv.Mat.zeros(warped.rows, warped.cols, cv.CV_8UC3);
+            
+            // Draw green contour
+            let green = new cv.Scalar(0, 255, 0, 255); // Green color
+            cv.drawContours(output, contours, -1, green, 2);
+
+            // Show and save processed image
+            cv.imshow("canvas", output);
+
+            let dataURL = canvas.toDataURL("image/png");
+            let a = document.createElement("a");
+            a.href = dataURL;
+            a.download = "processed_object.png";
+            a.click();
 
             // Cleanup
             warped.delete();
+            output.delete();
             srcMat.delete();
             dstMat.delete();
         }
@@ -130,17 +192,6 @@ function processFrame() {
     edges.delete();
     contours.delete();
     hierarchy.delete();
-
-    requestAnimationFrame(processFrame);
-}
-
-// Capture and save the processed object
-captureButton.addEventListener("click", () => {
-    let dataURL = canvas.toDataURL("image/png");
-    let a = document.createElement("a");
-    a.href = dataURL;
-    a.download = "processed_object.png";
-    a.click();
 });
 
 // Start with the back camera
