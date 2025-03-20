@@ -17,18 +17,26 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install Webpack
-        run: npm install -g webpack webpack-cli
+      - name: Install Dependencies
+        run: |
+          npm install -g typescript webpack webpack-cli
 
       - name: Clone DXF-Doc and Build
         run: |
           git clone https://github.com/YMSpektor/dxf-doc.git
           cd dxf-doc
           npm install
-          npx webpack ./src/index.js -o ./dist/dxf-doc.js --mode production
+          
+          # Compile TypeScript to JavaScript
+          npx tsc
+
+          # Bundle JavaScript into a single file
+          npx webpack ./dist/index.js -o ./dist/dxf-doc.js --mode production
+          
+          # Copy the bundled file to root
           cp ./dist/dxf-doc.js ../
 
-      - name: Upload DXF-Doc.js to Repository
+      - name: Upload DXF-Doc.js to Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: dxf-doc
