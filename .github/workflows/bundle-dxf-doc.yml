@@ -1,10 +1,33 @@
+name: Build DXF-Doc for Browser
+
+on:
+  push:
+    branches:
+      - main  # Change if your branch is different
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: |
+          npm install -g typescript webpack webpack-cli
+
       - name: Clone DXF-Doc and Build
         run: |
           git clone https://github.com/YMSpektor/dxf-doc.git
           cd dxf-doc
           npm install
           
-          # Compile TypeScript
+          # Compile TypeScript to JavaScript
           npx tsc || echo "TypeScript compilation failed"
 
           # Ensure the dist directory exists
@@ -13,7 +36,7 @@
           # Check if index.js exists
           if [ ! -f "dist/index.js" ]; then echo "Error: dist/index.js not found"; exit 1; fi
 
-          # Manually create a Webpack config to output a single file
+          # Create a Webpack config to bundle everything into one file
           echo 'const path = require("path");
           module.exports = {
             entry: "./dist/index.js",
@@ -34,3 +57,9 @@
 
           # Move the bundled file to the root directory
           mv dist/dxf-doc.js ../dxf-doc.js
+
+      - name: Upload DXF-Doc.js to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dxf-doc
+          path: dxf-doc.js
