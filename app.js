@@ -20,7 +20,7 @@ async function startCamera(facingMode = "environment") {
     }
 
     try {
-        let constraints = { video: { facingMode } }; // "environment" = back, "user" = front
+        let constraints = { video: { facingMode } };
         let stream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = stream;
         currentStream = stream;
@@ -35,42 +35,40 @@ async function startCamera(facingMode = "environment") {
     }
 }
 
-// Process frame with OpenCV (live video with magenta contour)
+// Process frame with OpenCV (use thresholding to find the largest object)
 function processFrame() {
     if (!processing) return;
     
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
     let src = cv.imread(canvas);
     let gray = new cv.Mat();
-    let blurred = new cv.Mat();
-    let edges = new cv.Mat();
-    
-    // Convert to grayscale and apply blur
+    let thresh = new cv.Mat();
+
+    // Convert to grayscale and apply thresholding
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-    cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
-    
-    // Detect edges
-    cv.Canny(blurred, edges, 50, 150);
-    
+    cv.threshold(gray, thresh, 128, 255, cv.THRESH_BINARY);
+
     // Find contours
     let contours = new cv.MatVector();
     let hierarchy = new cv.Mat();
-    cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+    cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
     
     let largestContour = null;
     let maxArea = 0;
-    
+    let centerX = canvas.width / 2;
+    let centerY = canvas.height / 2;
+
     for (let i = 0; i < contours.size(); i++) {
         let contour = contours.get(i);
         let area = cv.contourArea(contour);
-        
-        if (area > maxArea) {
-            let moments = cv.moments(contour);
+        let moments = cv.moments(contour);
+
+        if (area > maxArea && moments.m00 !== 0) {
             let cX = moments.m10 / moments.m00;
             let cY = moments.m01 / moments.m00;
 
-            // Check if the object is centered
-            if (Math.abs(cX - canvas.width / 2) < 100 && Math.abs(cY - canvas.height / 2) < 100) {
+            // Ensure the object contains the center point of the camera
+            if (cv.pointPolygonTest(contour, new cv.Point(centerX, centerY), false) >= 0) {
                 maxArea = area;
                 largestContour = contour;
             }
@@ -78,11 +76,15 @@ function processFrame() {
     }
 
     if (largestContour) {
-        let color = new cv.Scalar(255, 0, 255, 255); // Magenta color
+        let edges = new cv.Mat();
+        cv.Canny(thresh, edges, 50, 150);
         let largestContourVector = new cv.MatVector();
         largestContourVector.push_back(largestContour);
+        
+        let color = new cv.Scalar(255, 0, 255, 255); // Magenta color
         cv.drawContours(src, largestContourVector, 0, color, 2);
         largestContourVector.delete();
+        edges.delete();
     }
 
     cv.imshow("canvas", src);
@@ -90,8 +92,7 @@ function processFrame() {
     // Cleanup
     src.delete();
     gray.delete();
-    blurred.delete();
-    edges.delete();
+    thresh.delete();
     contours.delete();
     hierarchy.delete();
 
@@ -102,17 +103,15 @@ function processFrame() {
 captureButton.addEventListener("click", () => {
     let src = cv.imread(canvas);
     let gray = new cv.Mat();
-    let blurred = new cv.Mat();
-    let edges = new cv.Mat();
+    let thresh = new cv.Mat();
 
-    // Convert to grayscale and detect edges
+    // Convert to grayscale and detect object via thresholding
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-    cv.GaussianBlur(gray, blurred, new cv.Size(5, 5), 0);
-    cv.Canny(blurred, edges, 50, 150);
+    cv.threshold(gray, thresh, 128, 255, cv.THRESH_BINARY);
 
     let contours = new cv.MatVector();
     let hierarchy = new cv.Mat();
-    cv.findContours(edges, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+    cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
     let largestContour = null;
     let maxArea = 0;
@@ -194,8 +193,7 @@ captureButton.addEventListener("click", () => {
     // Cleanup
     src.delete();
     gray.delete();
-    blurred.delete();
-    edges.delete();
+    thresh.delete();
     contours.delete();
     hierarchy.delete();
 });
