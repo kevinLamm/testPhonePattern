@@ -1,0 +1,43 @@
+name: Build DXF-Doc for Browser
+
+on:
+  push:
+    branches:
+      - main  # Change to your default branch if needed
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: |
+          npm install -g typescript webpack webpack-cli
+
+      - name: Clone DXF-Doc and Build
+        run: |
+          git clone https://github.com/YMSpektor/dxf-doc.git
+          cd dxf-doc
+          npm install
+          
+          # Compile TypeScript to JavaScript
+          npx tsc
+
+          # Bundle JavaScript into a single file
+          npx webpack ./dist/index.js -o ./dist/dxf-doc.js --mode production
+          
+          # Copy the bundled file to root
+          cp ./dist/dxf-doc.js ../
+
+      - name: Upload DXF-Doc.js to Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dxf-doc.js
+          path: dxf-doc.js
