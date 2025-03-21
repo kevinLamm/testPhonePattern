@@ -2,7 +2,19 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Enable full-screen mode on Android and iOS -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<!-- Set status bar color (optional) -->
+<meta name="theme-color" content="#000000">
+
+<!-- Link to app manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- App icon -->
+<link rel="icon" sizes="192x192" href="icon.png">
     <title>Camera OpenCV App</title>
     <script async src="https://docs.opencv.org/4.8.0/opencv.js" onload="onOpenCvReady();"></script>
     <script src="libs/dxf-doc.js"></script>
@@ -16,6 +28,10 @@
         <div class="crosshairs"></div>
     </div>
     
+    <div id="splash-screen">
+        <img src="icon512.png" alt="App Icon" />
+        <p>Loading...</p>
+      </div>
     
     <script src="app.js"></script>
 </body>

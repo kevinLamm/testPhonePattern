@@ -13,6 +13,14 @@ let processing = true; // Enable processing
 video.style.display = "none";
 document.body.appendChild(video);
 
+window.addEventListener("load", () => {
+    const splash = document.getElementById("splash-screen");
+    if (splash) {
+      splash.style.display = "none";
+    }
+  });
+  
+
 // Function to start the camera
 async function startCamera(facingMode = "environment") {
     if (currentStream) {
