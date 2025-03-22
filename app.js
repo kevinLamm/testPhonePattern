@@ -288,70 +288,6 @@ class Pattern {
 
   function renderPatternList() {
     const listContainer = document.getElementById('pattern-list');
-    // Clear existing patterns (except the "Add Pattern" button)
-    listContainer.querySelectorAll('.pattern-row').forEach(el => el.remove());
-    
-    project.patterns.forEach((pattern, index) => {
-      const row = document.createElement('div');
-      row.classList.add('pattern-row');
-      row.setAttribute('data-index', index);
-      
-      row.innerHTML = `
-        <input type="text" class="pattern-description" placeholder="Description" value="${pattern.description}">
-        <input type="number" class="pattern-width" placeholder="Width" value="${pattern.width}">
-        <input type="number" class="pattern-height" placeholder="Height" value="${pattern.height}">
-        <textarea class="pattern-svg" placeholder="SVG Path">${pattern.svgPath}</textarea>
-        <button class="remove-pattern">Remove</button>
-        <button class="move-up">↑</button>
-        <button class="move-down">↓</button>
-      `;
-      
-      // Event listeners for updating values
-      row.querySelector('.pattern-description').addEventListener('input', e => {
-        project.patterns[index].description = e.target.value;
-      });
-      row.querySelector('.pattern-width').addEventListener('input', e => {
-        project.patterns[index].width = parseFloat(e.target.value);
-      });
-      row.querySelector('.pattern-height').addEventListener('input', e => {
-        project.patterns[index].height = parseFloat(e.target.value);
-      });
-      row.querySelector('.pattern-svg').addEventListener('input', e => {
-        project.patterns[index].svgPath = e.target.value;
-      });
-      
-      // Remove pattern
-      row.querySelector('.remove-pattern').addEventListener('click', () => {
-        project.patterns.splice(index, 1);
-        renderPatternList();
-      });
-      
-      // Move up/down functionality (simplest implementation)
-      row.querySelector('.move-up').addEventListener('click', () => {
-        if (index > 0) {
-          [project.patterns[index-1], project.patterns[index]] = [project.patterns[index], project.patterns[index-1]];
-          renderPatternList();
-        }
-      });
-      row.querySelector('.move-down').addEventListener('click', () => {
-        if (index < project.patterns.length - 1) {
-          [project.patterns[index+1], project.patterns[index]] = [project.patterns[index], project.patterns[index+1]];
-          renderPatternList();
-        }
-      });
-      
-      // Insert before the "Add Pattern" button
-      listContainer.insertBefore(row, document.getElementById('add-pattern'));
-    });
-  }
-  
-  document.getElementById('add-pattern').addEventListener('click', () => {
-    project.patterns.push(new Pattern());
-    renderPatternList();
-  });
-  
-  function renderPatternList() {
-    const listContainer = document.getElementById('pattern-list');
     // Remove existing pattern rows (except the "Add Pattern" button)
     listContainer.querySelectorAll('.pattern-row').forEach(el => el.remove());
     
@@ -360,14 +296,11 @@ class Pattern {
       row.classList.add('pattern-row');
       row.setAttribute('data-index', index);
       
-      // Create a container for the preview canvas with a fixed size (adjust as needed)
-      const previewCanvasHTML = `<canvas class="pattern-preview" width="100" height="100"></canvas>`;
-      
       row.innerHTML = `
         <input type="text" class="pattern-description" placeholder="Description" value="${pattern.description}">
         <input type="number" class="pattern-width" placeholder="Width" value="${pattern.width}">
         <input type="number" class="pattern-height" placeholder="Height" value="${pattern.height}">
-        ${previewCanvasHTML}
+        <canvas class="pattern-preview" width="100" height="100"></canvas>
         <button class="open-camera-for-pattern">Capture Image</button>
         <button class="remove-pattern">Remove</button>
         <button class="move-up">↑</button>
@@ -385,7 +318,7 @@ class Pattern {
         project.patterns[index].height = parseFloat(e.target.value);
       });
       
-      // Open camera for this pattern
+      // Set up the camera button for this pattern
       row.querySelector('.open-camera-for-pattern').addEventListener('click', () => {
         activePatternIndex = index;
         document.getElementById('camera-view').classList.remove('hidden');
@@ -411,18 +344,20 @@ class Pattern {
         }
       });
       
-      // Insert the row before the "Add Pattern" button
-      listContainer.insertBefore(row, document.getElementById('add-pattern'));
-      
-      // If the pattern has contour data, draw its preview on the canvas.
+      // Draw contour preview if available
       const previewCanvas = row.querySelector('.pattern-preview');
       if (pattern.contourData) {
-        drawContourPreview(pattern.contourData, previewCanvas);
+        drawContourOnCanvas(previewCanvas, pattern.contourData);
       } else {
-        // Optionally, clear the preview canvas if there's no data.
-        const ctx = previewCanvas.getContext('2d');
+        // Clear canvas or show a placeholder
+        const ctx = previewCanvas.getContext("2d");
         ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        ctx.fillStyle = "#ccc";
+        ctx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
       }
+      
+      // Insert the row before the "Add Pattern" button
+      listContainer.insertBefore(row, document.getElementById('add-pattern'));
     });
   }
   
@@ -430,25 +365,58 @@ class Pattern {
     project.patterns.push(new Pattern());
     renderPatternList();
   });
-
-  function drawContourPreview(contourData, canvas) {
-    const ctx = canvas.getContext('2d');
+  
+  function drawContourOnCanvas(canvas, contourData) {
+    const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
-    if (!contourData || contourData.length === 0) return;
-  
-    ctx.strokeStyle = "magenta";
-    ctx.lineWidth = 2;
     
-    // Assuming contourData is an array of { x, y } objects
+    if (!contourData || contourData.length === 0) return;
+    
+    // Calculate bounding box of the contour data
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    contourData.forEach(pt => {
+      minX = Math.min(minX, pt.x);
+      minY = Math.min(minY, pt.y);
+      maxX = Math.max(maxX, pt.x);
+      maxY = Math.max(maxY, pt.y);
+    });
+    
+    const contourWidth = maxX - minX;
+    const contourHeight = maxY - minY;
+    
+    // Determine scale to fit the canvas dimensions
+    const scaleX = canvas.width / contourWidth;
+    const scaleY = canvas.height / contourHeight;
+    const scale = Math.min(scaleX, scaleY);
+    
+    // Calculate offsets to center the drawing
+    const offsetX = (canvas.width - contourWidth * scale) / 2;
+    const offsetY = (canvas.height - contourHeight * scale) / 2;
+    
+    // Begin drawing the contour path
     ctx.beginPath();
-    ctx.moveTo(contourData[0].x, contourData[0].y);
+    const firstPoint = contourData[0];
+    ctx.moveTo((firstPoint.x - minX) * scale + offsetX, (firstPoint.y - minY) * scale + offsetY);
     for (let i = 1; i < contourData.length; i++) {
-      ctx.lineTo(contourData[i].x, contourData[i].y);
+      const pt = contourData[i];
+      ctx.lineTo((pt.x - minX) * scale + offsetX, (pt.y - minY) * scale + offsetY);
     }
     ctx.closePath();
+    ctx.strokeStyle = "blue";
+    ctx.lineWidth = 2;
     ctx.stroke();
   }
+  
+  document.getElementById('add-pattern').addEventListener('click', () => {
+    project.patterns.push(new Pattern());
+    renderPatternList();
+  });
+  
+  
+  
+  
+  
+
 
   document.getElementById('capture-process').addEventListener('click', () => {
     // Implement your function to convert contours to a simple data format
