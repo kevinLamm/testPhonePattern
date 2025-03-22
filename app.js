@@ -2,10 +2,10 @@ let video = document.createElement("video"); // Hidden video element
 let canvas = document.getElementById("canvas");
 
 let ctx = canvas.getContext("2d");
-let captureButton = document.createElement("button");
-captureButton.innerText = "Capture & Process";
-let cameraView = document.getElementById("camera-view");
-cameraView.appendChild(captureButton);
+let captureButton = document.getElementById("capture-process");
+//captureButton.innerText = "Capture & Process";
+//let cameraView = document.getElementById("camera-view");
+//cameraView.appendChild(captureButton);
 let activePatternIndex = null;
 
 let project = {
@@ -435,20 +435,20 @@ class Pattern {
   
 
 
-  document.getElementById('capture-process').addEventListener('click', () => {
+  //document.getElementById('capture-process').addEventListener('click', () => {
     // Implement your function to convert contours to a simple data format
     // For instance, convertContoursToData() might return an array of points.
-    const contourData = convertContoursToData(); 
+   // const contourData = convertContoursToData(); 
     
     // Save the contour data to the active pattern
-    if (activePatternIndex !== null) {
-      project.patterns[activePatternIndex].contourData = contourData;
-      renderPatternList();
-      activePatternIndex = null;
-    }
+   // if (activePatternIndex !== null) {
+   //   project.patterns[activePatternIndex].contourData = contourData;
+   //   renderPatternList();
+   //   activePatternIndex = null;
+   // }
     
     // Hide the camera view
-    document.getElementById('camera-view').classList.add('hidden');
-  });
+  //  document.getElementById('camera-view').classList.add('hidden');
+ // });
   
     
