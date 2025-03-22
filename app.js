@@ -29,7 +29,50 @@ window.addEventListener("load", () => {
     }
   });
 
+  document.addEventListener('DOMContentLoaded', () => {
+    // Initialize global project variable
+    window.project = {
+      name: "",
+      patterns: []
+    };
   
+  document.getElementById('menu-btn').addEventListener('click', () => {
+    const menu = document.getElementById('menu-nav');
+    menu.classList.toggle('hidden');
+  });
+  
+  document.getElementById('new-project').addEventListener('click', () => {
+    project.name = "";
+    project.patterns = [];
+    document.getElementById('project-name').value = "";
+    renderPatternList();
+  });
+  
+  document.getElementById('open-project').addEventListener('click', () => {
+    // Add logic to load a project (e.g., from local storage or file upload)
+    alert("Open Project functionality goes here.");
+  });
+  
+  document.getElementById('save-project').addEventListener('click', () => {
+    // Add logic to save the project (e.g., download JSON or use local storage)
+    alert("Save Project functionality goes here.");
+  });
+  
+  document.getElementById('share-project').addEventListener('click', () => {
+    // Implement share (e.g., generate shareable link or JSON export)
+    alert("Share Project functionality goes here.");
+  });
+  
+  document.getElementById('settings-btn').addEventListener('click', () => {
+    // Open settings modal or navigate to settings page
+    alert("Settings functionality goes here.");
+  });
+  
+  document.getElementById('close-camera').addEventListener('click', () => {
+    document.getElementById('camera-view').classList.add('hidden');
+  });
+
+});
   
 
   async function startCamera(facingMode = "environment") {
@@ -62,7 +105,6 @@ window.addEventListener("load", () => {
     
 }
 
-// Process frame with OpenCV (use thresholding to find the largest object)
 function processFrame() {
     if (!processing) return;
     
@@ -114,7 +156,24 @@ function processFrame() {
         edges.delete();
     }
 
+    // Display the processed frame on the canvas
     cv.imshow("canvas", src);
+
+    // --- Draw crosshairs on the canvas ---
+    let ctx2d = canvas.getContext("2d");
+    ctx2d.save();
+    ctx2d.globalCompositeOperation = "difference";
+    ctx2d.fillStyle = "white";
+    let crosshairSize = 20; // Crosshair length in pixels
+    // Calculate the center of the canvas
+    let chCenterX = canvas.width / 2;
+    let chCenterY = canvas.height / 2;
+    // Draw horizontal line (20px wide, 1px tall)
+    ctx2d.fillRect(chCenterX - crosshairSize / 2, chCenterY - 0.5, crosshairSize, 1);
+    // Draw vertical line (1px wide, 20px tall)
+    ctx2d.fillRect(chCenterX - 0.5, chCenterY - crosshairSize / 2, 1, crosshairSize);
+    ctx2d.restore();
+    // --- End crosshair drawing ---
 
     // Cleanup
     src.delete();
@@ -125,6 +184,7 @@ function processFrame() {
 
     requestAnimationFrame(processFrame);
 }
+
 
 // Start with the back camera
 startCamera("environment");
@@ -266,46 +326,7 @@ class Pattern {
     }
   }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    // Initialize global project variable
-    window.project = {
-      name: "",
-      patterns: []
-    };
   
-  document.getElementById('menu-btn').addEventListener('click', () => {
-    const menu = document.getElementById('menu-nav');
-    menu.classList.toggle('hidden');
-  });
-  
-  document.getElementById('new-project').addEventListener('click', () => {
-    project.name = "";
-    project.patterns = [];
-    document.getElementById('project-name').value = "";
-    renderPatternList();
-  });
-  
-  document.getElementById('open-project').addEventListener('click', () => {
-    // Add logic to load a project (e.g., from local storage or file upload)
-    alert("Open Project functionality goes here.");
-  });
-  
-  document.getElementById('save-project').addEventListener('click', () => {
-    // Add logic to save the project (e.g., download JSON or use local storage)
-    alert("Save Project functionality goes here.");
-  });
-  
-  document.getElementById('share-project').addEventListener('click', () => {
-    // Implement share (e.g., generate shareable link or JSON export)
-    alert("Share Project functionality goes here.");
-  });
-  
-  document.getElementById('settings-btn').addEventListener('click', () => {
-    // Open settings modal or navigate to settings page
-    alert("Settings functionality goes here.");
-  });
-
-});
 
   function renderPatternList() {
     const listContainer = document.getElementById('pattern-list');

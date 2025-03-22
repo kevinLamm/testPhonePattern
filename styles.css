@@ -39,7 +39,7 @@
     background: #444;
     padding: 10px;
     border-radius: 5px;
-    display: none;
+    
   }
   
   #menu-nav ul {
@@ -155,19 +155,16 @@
   }
   
   
-  #camera-view.hidden {
-    display: none;
-  }
-  
-  
-  
-  
-  
-  /* --- Utility Classes --- */
   .hidden {
     display: none !important;
   }
   
+  
+  
+  
+  
+  
+ 
 
 #canvas-container {
     margin:0;
@@ -179,7 +176,7 @@
   }
   
 
-  canvas {
+  #canvas {
     display: block;
     max-height: 100%;
     width: auto;
@@ -187,39 +184,6 @@
   }
 
 
-
-.crosshairs {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 20px;
-    height: 20px;
-    pointer-events: none;
-    transform: translate(-50%, -50%);
-    z-index: 2;
-}
-
-.crosshairs::before,
-.crosshairs::after {
-    content: "";
-    position: absolute;
-    background-color: white;
-    mix-blend-mode: difference;
-}
-
-.crosshairs::before {
-    width: 20px;
-    height: 1px;
-    top: 50%;
-    left: 0;
-}
-
-.crosshairs::after {
-    width: 1px;
-    height: 20px;
-    left: 50%;
-    top: 0;
-}
 
 
 button {
