@@ -1,53 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <!-- Enable full-screen mode on Android and iOS -->
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-
-<!-- Set status bar color (optional) -->
-<meta name="theme-color" content="#000000">
-
-<!-- Link to app manifest -->
-<link rel="manifest" href="manifest.json">
-
-<!-- iOS splash fallback -->
-<link rel="apple-touch-startup-image" href="icon512.png">
-
-
-<!-- App icon -->
-<link rel="icon" sizes="192x192" href="icon.png">
-<title>Camera OpenCV App</title>
-  
-<!-- Define the onOpenCvReady function so it exists when opencv.js loads -->
-<script>
-  function onOpenCvReady() {
-    console.log("OpenCV is ready");
-  }
-</script>
-
-<!-- Now load opencv.js (remove async if needed) -->
-<script src="https://docs.opencv.org/4.8.0/opencv.js" onload="onOpenCvReady();"></script>
-
-<!-- Other scripts and styles -->
-<script src="libs/dxf-doc.js"></script>
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-startup-image" href="icon512.png">
+  <link rel="icon" sizes="192x192" href="icon.png">
+  <title>Camera OpenCV App</title>
+  <!-- Make sure onOpenCvReady is defined before opencv.js -->
+  <script>
+    function onOpenCvReady() {
+      console.log("OpenCV is ready");
+    }
+  </script>
+  <script src="https://docs.opencv.org/4.8.0/opencv.js" onload="onOpenCvReady();"></script>
+  <script src="libs/dxf-doc.js"></script>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    
-   <label>test</label>
-    <div id="canvas-container">
-        <canvas id="canvas"></canvas>
-        <div class="crosshairs"></div>
+  <!-- Header with Hamburger Menu and Settings -->
+  <header>
+    <div id="hamburger-menu">
+      <button id="menu-btn">☰</button>
+      <nav id="menu-nav" class="hidden">
+        <ul>
+          <li><button id="new-project">New Project</button></li>
+          <li><button id="open-project">Open Project</button></li>
+          <li><button id="save-project">Save Project</button></li>
+          <li><button id="share-project">Share Project</button></li>
+        </ul>
+      </nav>
     </div>
-    
-    <div id="splash-screen">
-        <img src="icon512.png" alt="App Icon" />
-        <p>Loading...</p>
+    <button id="settings-btn">Settings</button>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    <!-- Project Name -->
+    <div id="project-header">
+      <input type="text" id="project-name" placeholder="Project Name" />
+    </div>
+
+    <!-- Pattern List -->
+    <div id="pattern-list">
+      <!-- This is dynamically populated. Each pattern row might look like this: -->
+      <!--
+      <div class="pattern-row" data-index="0">
+        <input type="text" class="pattern-description" placeholder="Description">
+        <input type="number" class="pattern-width" placeholder="Width">
+        <input type="number" class="pattern-height" placeholder="Height">
+        <textarea class="pattern-svg" placeholder="SVG Path"></textarea>
+        <button class="remove-pattern">Remove</button>
+        <button class="move-up">↑</button>
+        <button class="move-down">↓</button>
       </div>
-    
-    <script src="app.js"></script>
+      -->
+      <button id="add-pattern">Add Pattern</button>
+    </div>
+
+    <!-- Camera Button to open camera view (could be a modal or separate page) -->
+    <button id="open-camera">Open Camera</button>
+  </main>
+
+  <!-- Splash Screen (if still used) -->
+  <div id="splash-screen">
+    <img src="icon512.png" alt="App Icon" />
+    <p>Loading...</p>
+  </div>
+
+  <!-- Canvas container for camera view (could be hidden/shown as needed) -->
+  <div id="camera-view" class="hidden">
+    <div id="canvas-container">
+      <canvas id="canvas"></canvas>
+      <div class="crosshairs"></div>
+    </div>
+    <button id="capture-process">Capture & Process</button>
+    <button id="close-camera">Close Camera</button>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>

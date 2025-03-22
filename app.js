@@ -4,6 +4,7 @@ let ctx = canvas.getContext("2d");
 let captureButton = document.createElement("button");
 captureButton.innerText = "Capture & Process";
 document.body.appendChild(captureButton);
+let activePatternIndex = null;
 
 let currentStream = null;
 let useBackCamera = true; // Default to back camera
@@ -117,25 +118,25 @@ function processFrame() {
 
 // Capture and process the largest centered object
 captureButton.addEventListener("click", () => {
+    // Read the current frame from the canvas
     let src = cv.imread(canvas);
     let gray = new cv.Mat();
     let thresh = new cv.Mat();
 
-    // Convert to grayscale and detect object via thresholding
+    // Convert to grayscale and threshold
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
     cv.threshold(gray, thresh, 128, 255, cv.THRESH_BINARY);
 
+    // Find contours in the thresholded image
     let contours = new cv.MatVector();
     let hierarchy = new cv.Mat();
     cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
     let largestContour = null;
     let maxArea = 0;
-    
     for (let i = 0; i < contours.size(); i++) {
         let contour = contours.get(i);
         let area = cv.contourArea(contour);
-
         if (area > maxArea) {
             maxArea = area;
             largestContour = contour;
@@ -143,67 +144,93 @@ captureButton.addEventListener("click", () => {
     }
 
     if (largestContour) {
+        // Approximate the contour to a quadrilateral
         let approx = new cv.Mat();
         let peri = cv.arcLength(largestContour, true);
         cv.approxPolyDP(largestContour, approx, 0.02 * peri, true);
 
         if (approx.rows === 4) {
+            // Get the four points and sort them to determine corners
             let points = [];
             for (let i = 0; i < 4; i++) {
                 let x = approx.data32S[i * 2];
                 let y = approx.data32S[i * 2 + 1];
                 points.push({ x, y });
             }
-
+            // Sort points by y-coordinate to separate top and bottom points
             points.sort((a, b) => a.y - b.y);
-            let topLeft = points[0].x < points[1].x ? points[0] : points[1];
-            let topRight = points[0].x > points[1].x ? points[0] : points[1];
-            let bottomLeft = points[2].x < points[3].x ? points[2] : points[3];
-            let bottomRight = points[2].x > points[3].x ? points[2] : points[3];
+            let topPoints = points.slice(0, 2).sort((a, b) => a.x - b.x);
+            let bottomPoints = points.slice(2).sort((a, b) => a.x - b.x);
+            let topLeft = topPoints[0], topRight = topPoints[1];
+            let bottomLeft = bottomPoints[0], bottomRight = bottomPoints[1];
 
-            let srcMat = cv.matFromArray(4, 1, cv.CV_32FC2, [
+            // Define source and destination points for perspective transform
+            let srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
                 topLeft.x, topLeft.y,
                 topRight.x, topRight.y,
                 bottomRight.x, bottomRight.y,
                 bottomLeft.x, bottomLeft.y
             ]);
-            let dstMat = cv.matFromArray(4, 1, cv.CV_32FC2, [
+            let dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
                 0, 0,
                 canvas.width, 0,
                 canvas.width, canvas.height,
                 0, canvas.height
             ]);
 
-            let matrix = cv.getPerspectiveTransform(srcMat, dstMat);
+            // Compute perspective transform matrix
+            let matrix = cv.getPerspectiveTransform(srcPts, dstPts);
+
+            // Warp the source image for preview
             let warped = new cv.Mat();
             cv.warpPerspective(src, warped, matrix, new cv.Size(canvas.width, canvas.height));
 
-            // Create a black background
-            let output = new cv.Mat.zeros(warped.rows, warped.cols, cv.CV_8UC3);
+            // Compute the warped contour data:
+            // For each point in the original largestContour, apply the perspective transform.
+            let warpedContourData = [];
+            // Ensure we treat the contour points as floats
+            let numPoints = largestContour.data32S.length / 2;
+            // Access the transform matrix data (assumed to be CV_64F)
+            let m = matrix.data64F;
+            for (let i = 0; i < numPoints; i++) {
+                let x = largestContour.data32S[i * 2];
+                let y = largestContour.data32S[i * 2 + 1];
+                // Apply perspective transform:
+                let denominator = m[6] * x + m[7] * y + m[8];
+                let warpedX = (m[0] * x + m[1] * y + m[2]) / denominator;
+                let warpedY = (m[3] * x + m[4] * y + m[5]) / denominator;
+                warpedContourData.push({ x: warpedX, y: warpedY });
+            }
+
+            // Draw the warped contour on the preview canvas for feedback
+            let color = new cv.Scalar(0, 255, 0, 255);
+            let contourVec = new cv.MatVector();
+            contourVec.push_back(largestContour);
+            cv.drawContours(warped, contourVec, 0, color, 2);
+            cv.imshow("canvas", warped);
+            contourVec.delete();
+
+            // Store the warped contour data in the active pattern
+            if (activePatternIndex !== null) {
+                project.patterns[activePatternIndex].contourData = warpedContourData;
+            }
             
-            // Draw green contour
-            let green = new cv.Scalar(0, 255, 0, 255);
-            let singleContourVector = new cv.MatVector();
-            singleContourVector.push_back(largestContour);
-            cv.drawContours(output, singleContourVector, 0, green, 2);
-            singleContourVector.delete();
+            // Update the pattern list so that the preview canvas is refreshed
+            renderPatternList();
 
-            // Show and save processed image
-            cv.imshow("canvas", output);
+            // Clean up: reset active pattern index and hide camera view
+            activePatternIndex = null;
+            document.getElementById('camera-view').classList.add('hidden');
 
-            let dataURL = canvas.toDataURL("image/png");
-            let a = document.createElement("a");
-            a.href = dataURL;
-            a.download = "processed_object.png";
-            a.click();
-
-            // Cleanup
+            // Cleanup temporary Mats
+            srcPts.delete();
+            dstPts.delete();
+            matrix.delete();
             warped.delete();
-            output.delete();
-            srcMat.delete();
-            dstMat.delete();
         }
         approx.delete();
+    } else {
+        console.log("No contour found.");
     }
 
     // Cleanup
@@ -214,5 +241,229 @@ captureButton.addEventListener("click", () => {
     hierarchy.delete();
 });
 
+
 // Start with the back camera
 startCamera("environment");
+
+class Pattern {
+    constructor(description = "", width = 0, height = 0, contourData = null) {
+      this.description = description;
+      this.width = width;
+      this.height = height;
+      this.contourData = contourData; // This will hold the raw contour data
+    }
+  }
+  
+  document.getElementById('menu-btn').addEventListener('click', () => {
+    const menu = document.getElementById('menu-nav');
+    menu.classList.toggle('hidden');
+  });
+  
+  document.getElementById('new-project').addEventListener('click', () => {
+    project.name = "";
+    project.patterns = [];
+    document.getElementById('project-name').value = "";
+    renderPatternList();
+  });
+  
+  document.getElementById('open-project').addEventListener('click', () => {
+    // Add logic to load a project (e.g., from local storage or file upload)
+    alert("Open Project functionality goes here.");
+  });
+  
+  document.getElementById('save-project').addEventListener('click', () => {
+    // Add logic to save the project (e.g., download JSON or use local storage)
+    alert("Save Project functionality goes here.");
+  });
+  
+  document.getElementById('share-project').addEventListener('click', () => {
+    // Implement share (e.g., generate shareable link or JSON export)
+    alert("Share Project functionality goes here.");
+  });
+  
+  document.getElementById('settings-btn').addEventListener('click', () => {
+    // Open settings modal or navigate to settings page
+    alert("Settings functionality goes here.");
+  });
+
+  function renderPatternList() {
+    const listContainer = document.getElementById('pattern-list');
+    // Clear existing patterns (except the "Add Pattern" button)
+    listContainer.querySelectorAll('.pattern-row').forEach(el => el.remove());
+    
+    project.patterns.forEach((pattern, index) => {
+      const row = document.createElement('div');
+      row.classList.add('pattern-row');
+      row.setAttribute('data-index', index);
+      
+      row.innerHTML = `
+        <input type="text" class="pattern-description" placeholder="Description" value="${pattern.description}">
+        <input type="number" class="pattern-width" placeholder="Width" value="${pattern.width}">
+        <input type="number" class="pattern-height" placeholder="Height" value="${pattern.height}">
+        <textarea class="pattern-svg" placeholder="SVG Path">${pattern.svgPath}</textarea>
+        <button class="remove-pattern">Remove</button>
+        <button class="move-up">↑</button>
+        <button class="move-down">↓</button>
+      `;
+      
+      // Event listeners for updating values
+      row.querySelector('.pattern-description').addEventListener('input', e => {
+        project.patterns[index].description = e.target.value;
+      });
+      row.querySelector('.pattern-width').addEventListener('input', e => {
+        project.patterns[index].width = parseFloat(e.target.value);
+      });
+      row.querySelector('.pattern-height').addEventListener('input', e => {
+        project.patterns[index].height = parseFloat(e.target.value);
+      });
+      row.querySelector('.pattern-svg').addEventListener('input', e => {
+        project.patterns[index].svgPath = e.target.value;
+      });
+      
+      // Remove pattern
+      row.querySelector('.remove-pattern').addEventListener('click', () => {
+        project.patterns.splice(index, 1);
+        renderPatternList();
+      });
+      
+      // Move up/down functionality (simplest implementation)
+      row.querySelector('.move-up').addEventListener('click', () => {
+        if (index > 0) {
+          [project.patterns[index-1], project.patterns[index]] = [project.patterns[index], project.patterns[index-1]];
+          renderPatternList();
+        }
+      });
+      row.querySelector('.move-down').addEventListener('click', () => {
+        if (index < project.patterns.length - 1) {
+          [project.patterns[index+1], project.patterns[index]] = [project.patterns[index], project.patterns[index+1]];
+          renderPatternList();
+        }
+      });
+      
+      // Insert before the "Add Pattern" button
+      listContainer.insertBefore(row, document.getElementById('add-pattern'));
+    });
+  }
+  
+  document.getElementById('add-pattern').addEventListener('click', () => {
+    project.patterns.push(new Pattern());
+    renderPatternList();
+  });
+  
+  function renderPatternList() {
+    const listContainer = document.getElementById('pattern-list');
+    // Remove existing pattern rows (except the "Add Pattern" button)
+    listContainer.querySelectorAll('.pattern-row').forEach(el => el.remove());
+    
+    project.patterns.forEach((pattern, index) => {
+      const row = document.createElement('div');
+      row.classList.add('pattern-row');
+      row.setAttribute('data-index', index);
+      
+      // Create a container for the preview canvas with a fixed size (adjust as needed)
+      const previewCanvasHTML = `<canvas class="pattern-preview" width="100" height="100"></canvas>`;
+      
+      row.innerHTML = `
+        <input type="text" class="pattern-description" placeholder="Description" value="${pattern.description}">
+        <input type="number" class="pattern-width" placeholder="Width" value="${pattern.width}">
+        <input type="number" class="pattern-height" placeholder="Height" value="${pattern.height}">
+        ${previewCanvasHTML}
+        <button class="open-camera-for-pattern">Capture Image</button>
+        <button class="remove-pattern">Remove</button>
+        <button class="move-up">↑</button>
+        <button class="move-down">↓</button>
+      `;
+      
+      // Update pattern values on input change
+      row.querySelector('.pattern-description').addEventListener('input', e => {
+        project.patterns[index].description = e.target.value;
+      });
+      row.querySelector('.pattern-width').addEventListener('input', e => {
+        project.patterns[index].width = parseFloat(e.target.value);
+      });
+      row.querySelector('.pattern-height').addEventListener('input', e => {
+        project.patterns[index].height = parseFloat(e.target.value);
+      });
+      
+      // Open camera for this pattern
+      row.querySelector('.open-camera-for-pattern').addEventListener('click', () => {
+        activePatternIndex = index;
+        document.getElementById('camera-view').classList.remove('hidden');
+      });
+      
+      // Remove pattern
+      row.querySelector('.remove-pattern').addEventListener('click', () => {
+        project.patterns.splice(index, 1);
+        renderPatternList();
+      });
+      
+      // Move up/down functionality
+      row.querySelector('.move-up').addEventListener('click', () => {
+        if (index > 0) {
+          [project.patterns[index - 1], project.patterns[index]] = [project.patterns[index], project.patterns[index - 1]];
+          renderPatternList();
+        }
+      });
+      row.querySelector('.move-down').addEventListener('click', () => {
+        if (index < project.patterns.length - 1) {
+          [project.patterns[index + 1], project.patterns[index]] = [project.patterns[index], project.patterns[index + 1]];
+          renderPatternList();
+        }
+      });
+      
+      // Insert the row before the "Add Pattern" button
+      listContainer.insertBefore(row, document.getElementById('add-pattern'));
+      
+      // If the pattern has contour data, draw its preview on the canvas.
+      const previewCanvas = row.querySelector('.pattern-preview');
+      if (pattern.contourData) {
+        drawContourPreview(pattern.contourData, previewCanvas);
+      } else {
+        // Optionally, clear the preview canvas if there's no data.
+        const ctx = previewCanvas.getContext('2d');
+        ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+      }
+    });
+  }
+  
+  document.getElementById('add-pattern').addEventListener('click', () => {
+    project.patterns.push(new Pattern());
+    renderPatternList();
+  });
+
+  function drawContourPreview(contourData, canvas) {
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+    if (!contourData || contourData.length === 0) return;
+  
+    ctx.strokeStyle = "magenta";
+    ctx.lineWidth = 2;
+    
+    // Assuming contourData is an array of { x, y } objects
+    ctx.beginPath();
+    ctx.moveTo(contourData[0].x, contourData[0].y);
+    for (let i = 1; i < contourData.length; i++) {
+      ctx.lineTo(contourData[i].x, contourData[i].y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+  }
+
+  document.getElementById('capture-process').addEventListener('click', () => {
+    // Implement your function to convert contours to a simple data format
+    // For instance, convertContoursToData() might return an array of points.
+    const contourData = convertContoursToData(); 
+    
+    // Save the contour data to the active pattern
+    if (activePatternIndex !== null) {
+      project.patterns[activePatternIndex].contourData = contourData;
+      renderPatternList();
+      activePatternIndex = null;
+    }
+    
+    // Hide the camera view
+    document.getElementById('camera-view').classList.add('hidden');
+  });
+  
+    
