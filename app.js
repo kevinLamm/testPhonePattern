@@ -1,9 +1,11 @@
 let video = document.createElement("video"); // Hidden video element
 let canvas = document.getElementById("canvas");
+
 let ctx = canvas.getContext("2d");
 let captureButton = document.createElement("button");
 captureButton.innerText = "Capture & Process";
-document.body.appendChild(captureButton);
+let cameraView = document.getElementById("camera-view");
+cameraView.appendChild(captureButton);
 let activePatternIndex = null;
 
 let currentStream = null;
@@ -13,6 +15,7 @@ let processing = true; // Enable processing
 // Hide the video element (it will still capture frames)
 video.style.display = "none";
 document.body.appendChild(video);
+
 
 window.addEventListener("load", () => {
     const splash = document.getElementById("splash-screen");
@@ -115,6 +118,9 @@ function processFrame() {
 
     requestAnimationFrame(processFrame);
 }
+
+// Start with the back camera
+startCamera("environment");
 
 // Capture and process the largest centered object
 captureButton.addEventListener("click", () => {
@@ -242,8 +248,7 @@ captureButton.addEventListener("click", () => {
 });
 
 
-// Start with the back camera
-startCamera("environment");
+
 
 class Pattern {
     constructor(description = "", width = 0, height = 0, contourData = null) {
