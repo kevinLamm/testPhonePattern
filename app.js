@@ -32,20 +32,23 @@ window.addEventListener("load", () => {
         video.srcObject = stream;
         currentStream = stream;
         video.onloadedmetadata = () => {
+            console.log("Video dimensions:", video.videoWidth, video.videoHeight);
             video.play();
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             processFrame(); // Start processing
-
-            // Hide the splash screen here as soon as the camera is ready
+        
+            // Hide the splash screen when the camera is ready
             const splash = document.getElementById("splash-screen");
             if (splash) {
               splash.style.display = "none";
             }
         };
+        
     } catch (err) {
         console.error("Error accessing camera:", err);
     }
+    
 }
 
 // Process frame with OpenCV (use thresholding to find the largest object)

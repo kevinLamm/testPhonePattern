@@ -8,15 +8,16 @@ body {
     display: inline-block;
     width: 100%;
     max-width: 1200px;
-    height: auto; /* or set a specific height */
-}
+    min-height: 400px; /* Ensure the container has some height */
+  }
+  
 
-canvas {
-    width: 100%;
-    height: auto;  /* Let the canvas scale while preserving aspect ratio */
+  canvas {
     display: block;
-}
-
+    max-width: 100%;
+    height: auto;
+    border: 2px solid red; /* for debugging */
+  }
 
 
 
