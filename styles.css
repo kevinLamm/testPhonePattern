@@ -4,11 +4,12 @@ body {
 }
 
 #canvas-container {
+    margin:0;
     position: relative;
     display: inline-block;
     height: 100%;
-    max-height: 1200px;
-    min-width: 400px; /* Ensure the container has some height */
+    max-height: 2200px;
+    min-width: 400px; /* Ensure the container has some width */
   }
   
 
