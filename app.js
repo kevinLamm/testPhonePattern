@@ -21,10 +21,9 @@ window.addEventListener("load", () => {
   });
   
 
-// Function to start the camera
-async function startCamera(facingMode = "environment") {
+  async function startCamera(facingMode = "environment") {
     if (currentStream) {
-        currentStream.getTracks().forEach(track => track.stop()); // Stop previous stream
+        currentStream.getTracks().forEach(track => track.stop());
     }
 
     try {
@@ -37,6 +36,12 @@ async function startCamera(facingMode = "environment") {
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             processFrame(); // Start processing
+
+            // Hide the splash screen here as soon as the camera is ready
+            const splash = document.getElementById("splash-screen");
+            if (splash) {
+              splash.style.display = "none";
+            }
         };
     } catch (err) {
         console.error("Error accessing camera:", err);
