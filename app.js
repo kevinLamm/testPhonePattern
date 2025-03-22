@@ -8,6 +8,11 @@ let cameraView = document.getElementById("camera-view");
 cameraView.appendChild(captureButton);
 let activePatternIndex = null;
 
+let project = {
+    name: "",
+    patterns: []
+  };
+
 let currentStream = null;
 let useBackCamera = true; // Default to back camera
 let processing = true; // Enable processing
@@ -23,6 +28,8 @@ window.addEventListener("load", () => {
       splash.style.display = "none";
     }
   });
+
+  
   
 
   async function startCamera(facingMode = "environment") {
@@ -258,6 +265,13 @@ class Pattern {
       this.contourData = contourData; // This will hold the raw contour data
     }
   }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Initialize global project variable
+    window.project = {
+      name: "",
+      patterns: []
+    };
   
   document.getElementById('menu-btn').addEventListener('click', () => {
     const menu = document.getElementById('menu-nav');
@@ -290,6 +304,8 @@ class Pattern {
     // Open settings modal or navigate to settings page
     alert("Settings functionality goes here.");
   });
+
+});
 
   function renderPatternList() {
     const listContainer = document.getElementById('pattern-list');
@@ -412,10 +428,6 @@ class Pattern {
     ctx.stroke();
   }
   
-  document.getElementById('add-pattern').addEventListener('click', () => {
-    project.patterns.push(new Pattern());
-    renderPatternList();
-  });
   
   
   
