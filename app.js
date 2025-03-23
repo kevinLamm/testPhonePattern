@@ -221,7 +221,7 @@ captureButton.addEventListener("click", () => {
    // }
 
    if (largestContourVector) {
-    largestContour = largestContourVector
+    largestContour = largestContourVector;
    
 
     if (largestContour) {
@@ -284,24 +284,19 @@ captureButton.addEventListener("click", () => {
             }
 
             // Draw the warped contour on the preview canvas for feedback
-            let color = new cv.Scalar(0, 255, 0, 255);
-            let contourVec = new cv.MatVector();
-            contourVec.push_back(largestContour);
-            cv.drawContours(warped, contourVec, 0, color, 2);
-            cv.imshow("canvas", warped);
-            contourVec.delete();
+            //let color = new cv.Scalar(0, 255, 0, 255);
+            //let contourVec = new cv.MatVector();
+            //contourVec.push_back(largestContour);
+            //cv.drawContours(warped, contourVec, 0, color, 2);
+           // cv.imshow("canvas", warped);
+           // contourVec.delete();
 
             // Store the warped contour data in the active pattern
             if (activePatternIndex !== null) {
                 project.patterns[activePatternIndex].contourData = warpedContourData;
             }
             
-            // Update the pattern list so that the preview canvas is refreshed
-            renderPatternList();
-
-            // Clean up: reset active pattern index and hide camera view
-            activePatternIndex = null;
-            document.getElementById('camera-view').classList.add('hidden');
+           
 
             // Cleanup temporary Mats
             srcPts.delete();
@@ -323,6 +318,12 @@ captureButton.addEventListener("click", () => {
    // thresh.delete();
    // contours.delete();
    // hierarchy.delete();
+    // Update the pattern list so that the preview canvas is refreshed
+    renderPatternList();
+
+    // Clean up: reset active pattern index and hide camera view
+    activePatternIndex = null;
+    document.getElementById('camera-view').classList.add('hidden');
 });
 
 
