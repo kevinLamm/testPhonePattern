@@ -7,6 +7,7 @@ let captureButton = document.getElementById("capture-process");
 //let cameraView = document.getElementById("camera-view");
 //cameraView.appendChild(captureButton);
 let activePatternIndex = null;
+let largestContourVector = null;
 
 let project = {
     name: "",
@@ -70,6 +71,7 @@ window.addEventListener("load", () => {
   
   document.getElementById('close-camera').addEventListener('click', () => {
     document.getElementById('camera-view').classList.add('hidden');
+    largestContourVector = null;
   });
 
 });
@@ -104,6 +106,8 @@ window.addEventListener("load", () => {
     }
     
 }
+
+
 
 function processFrame() {
     if (!processing) return;
@@ -147,7 +151,7 @@ function processFrame() {
     if (largestContour) {
         let edges = new cv.Mat();
         cv.Canny(thresh, edges, 50, 150);
-        let largestContourVector = new cv.MatVector();
+        largestContourVector = new cv.MatVector();
         largestContourVector.push_back(largestContour);
         
         let color = new cv.Scalar(255, 0, 255, 255); // Magenta color
@@ -192,29 +196,33 @@ startCamera("environment");
 // Capture and process the largest centered object
 captureButton.addEventListener("click", () => {
     // Read the current frame from the canvas
-    let src = cv.imread(canvas);
-    let gray = new cv.Mat();
-    let thresh = new cv.Mat();
+   // let src = cv.imread(canvas);
+   // let gray = new cv.Mat();
+   // let thresh = new cv.Mat();
 
     // Convert to grayscale and threshold
-    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-    cv.threshold(gray, thresh, 128, 255, cv.THRESH_BINARY);
+   // cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+   // cv.threshold(gray, thresh, 128, 255, cv.THRESH_BINARY);
 
     // Find contours in the thresholded image
-    let contours = new cv.MatVector();
-    let hierarchy = new cv.Mat();
-    cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+   // let contours = new cv.MatVector();
+   // let hierarchy = new cv.Mat();
+    //cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
     let largestContour = null;
-    let maxArea = 0;
-    for (let i = 0; i < contours.size(); i++) {
-        let contour = contours.get(i);
-        let area = cv.contourArea(contour);
-        if (area > maxArea) {
-            maxArea = area;
-            largestContour = contour;
-        }
-    }
+    //let maxArea = 0;
+    //for (let i = 0; i < contours.size(); i++) {
+    //    let contour = contours.get(i);
+     //   let area = cv.contourArea(contour);
+    //    if (area > maxArea) {
+    //        maxArea = area;
+    //        largestContour = contour;
+    //    }
+   // }
+
+   if (largestContourVector) {
+    largestContour = largestContourVector
+   
 
     if (largestContour) {
         // Approximate the contour to a quadrilateral
@@ -302,16 +310,19 @@ captureButton.addEventListener("click", () => {
             warped.delete();
         }
         approx.delete();
+        largestContourVector = null;
+
+    }
     } else {
         console.log("No contour found.");
     }
 
     // Cleanup
-    src.delete();
-    gray.delete();
-    thresh.delete();
-    contours.delete();
-    hierarchy.delete();
+   // src.delete();
+   // gray.delete();
+   // thresh.delete();
+   // contours.delete();
+   // hierarchy.delete();
 });
 
 
