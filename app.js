@@ -238,7 +238,7 @@ let objectPoints = cv.matFromArray(4, 3, cv.CV_32F, [
     
 } catch (err) {
     // updateDebugLabel("Error during marker detection/pose estimation: " + err);
-    updateDebugLabel("detect markers run: " + markerIds.rows);
+    updateDebugLabel("detect markers not run");
  }
     // --- Largest Contour Detection (same as original) ---
     let thresh = new cv.Mat();
