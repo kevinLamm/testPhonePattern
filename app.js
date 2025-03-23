@@ -273,25 +273,34 @@ function captureProcess(event) {
             }
 
             // Draw the warped contour on the warped image for feedback
-            let color = new cv.Scalar(0, 255, 0, 255);
-            let contourVec = new cv.MatVector();
-            contourVec.push_back(largestContour);
-            cv.drawContours(warped, contourVec, 0, color, 2);
-            cv.imshow("canvas", warped);
-            contourVec.delete();
+            //let color = new cv.Scalar(0, 255, 0, 255);
+            //let contourVec = new cv.MatVector();
+            //contourVec.push_back(largestContour);
+            //cv.drawContours(warped, contourVec, 0, color, 2);
+            //cv.imshow("canvas", warped);
+            //contourVec.delete();
 
-           
+            if (activePatternIndex !== null) {
+                project.patterns[activePatternIndex].contourData = warpedContourData;
+            }
+        
+            renderPatternList();
+            activePatternIndex = null;
 
             srcPts.delete();
             dstPts.delete();
             matrix.delete();
             warped.delete();
+
+            updateDebugLabel("warp completed.");
+           
         }
         approx.delete();
         updateDebugLabel("Processing completed.");
+       
     } else {
         console.log("No contour found.");
-        updateDebugLabel("Error in capture process: " + error.message);
+        //updateDebugLabel("Error in capture process: " + error.message);
     }
 
     src.delete();
@@ -300,12 +309,7 @@ function captureProcess(event) {
     contours.delete();
     hierarchy.delete();
 
-    if (activePatternIndex !== null) {
-        project.patterns[activePatternIndex].contourData = warpedContourData;
-    }
-
-    renderPatternList();
-    activePatternIndex = null;
+    
     document.getElementById('camera-view').classList.add('hidden');
 };
 
