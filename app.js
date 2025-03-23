@@ -68,11 +68,9 @@ window.addEventListener("load", () => {
   });
   
   document.getElementById("marker-btn").addEventListener("click", function() {
-    const link = document.createElement('a');
-    link.href = 'Marker.pdf'; // Replace this with the actual file path
-    link.download = 'Marker.pdf'; // This is optional, you can give the file a custom name
-    link.click();
-   });
+    window.open('Marker.pdf', '_blank'); // Open the PDF in a new tab
+});
+
 
   
   document.getElementById('settings-btn').addEventListener('click', () => {
