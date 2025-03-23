@@ -392,18 +392,20 @@ class Pattern {
         // Clear canvas or show a placeholder
         const ctx = previewCanvas.getContext("2d");
         ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-        ctx.fillStyle = "#ccc";
+        ctx.fillStyle = "#fff";
         ctx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
       }
       
       // Insert the row before the "Add Pattern" button
       listContainer.insertBefore(row, document.getElementById('add-pattern'));
+      lucide.createIcons();
     });
   }
   
   document.getElementById('add-pattern').addEventListener('click', () => {
     project.patterns.push(new Pattern());
     renderPatternList();
+    lucide.createIcons();
   });
   
   function drawContourOnCanvas(canvas, contourData) {
