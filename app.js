@@ -340,9 +340,9 @@ class Pattern {
         <input type="text" class="pattern-description" placeholder="Description" value="${pattern.description}">
         <input type="number" class="pattern-width" placeholder="Width" value="${pattern.width}">
         <input type="number" class="pattern-height" placeholder="Height" value="${pattern.height}">
-        <canvas class="pattern-preview" width="100" height="100"></canvas>
-        <button class="open-camera-for-pattern">Capture Image</button>
-        <button class="remove-pattern">Remove</button>
+        <canvas class="pattern-preview" width="350" height="150"></canvas>
+        <button class="open-camera-for-pattern"><i data-lucide="camera"></i></button>
+        <button class="remove-pattern"><i data-lucide="trash-2"></i></button>
         <button class="move-up">↑</button>
         <button class="move-down">↓</button>
       `;
@@ -442,8 +442,8 @@ class Pattern {
       ctx.lineTo((pt.x - minX) * scale + offsetX, (pt.y - minY) * scale + offsetY);
     }
     ctx.closePath();
-    ctx.strokeStyle = "blue";
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 1;
     ctx.stroke();
   }
   
