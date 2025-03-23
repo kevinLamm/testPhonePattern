@@ -88,7 +88,7 @@ lastLargestContour = null;
 lastMarkerHomography = null; // Homography computed from the marker corners
 
   });
-
+  console.log(cv.aruco);
 });
   
 // When the video metadata is loaded, set dimensions for both canvases
@@ -139,7 +139,7 @@ function processFrame() {
     let src = cv.imread(processingCanvas);
     let gray = new cv.Mat();
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-
+    
     
     try {
     // --- Marker Detection & Pose Estimation (wrapped in try-catch) ---
