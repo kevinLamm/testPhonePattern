@@ -243,20 +243,22 @@ function processFrame() {
         contourVector.delete();
     }
 
-    // --- Draw Crosshairs on the visible canvas ---
-    let ctx2d = canvas.getContext("2d");
-    ctx2d.save();
-    ctx2d.globalCompositeOperation = "difference";
-    ctx2d.fillStyle = "white";
-    let crosshairSize = 20;
-    let chCenterX = canvas.width / 2;
-    let chCenterY = canvas.height / 2;
-    ctx2d.fillRect(chCenterX - crosshairSize / 2, chCenterY - 0.5, crosshairSize, 1);
-    ctx2d.fillRect(chCenterX - 0.5, chCenterY - crosshairSize / 2, 1, crosshairSize);
-    ctx2d.restore();
+    
 
     // Display the processed frame on the visible canvas.
     cv.imshow("canvas", src);
+
+    // Now, draw crosshairs on top of the image.
+let ctx2d = canvas.getContext("2d");
+ctx2d.save();
+ctx2d.globalCompositeOperation = "difference";
+ctx2d.fillStyle = "white";
+let crosshairSize = 20;
+let chCenterX = canvas.width / 2;
+let chCenterY = canvas.height / 2;
+ctx2d.fillRect(chCenterX - crosshairSize / 2, chCenterY - 0.5, crosshairSize, 1);
+ctx2d.fillRect(chCenterX - 0.5, chCenterY - crosshairSize / 2, 1, crosshairSize);
+ctx2d.restore();
 
     // Cleanup Mats
     src.delete();
