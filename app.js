@@ -337,14 +337,18 @@ class Pattern {
       row.setAttribute('data-index', index);
       
       row.innerHTML = `
-        <input type="text" class="pattern-description" placeholder="Description" value="${pattern.description}">
-        <input type="number" class="pattern-width" placeholder="Width" value="${pattern.width}">
-        <input type="number" class="pattern-height" placeholder="Height" value="${pattern.height}">
         <canvas class="pattern-preview" width="350" height="150"></canvas>
+        <input type="text" class="pattern-description" placeholder="Description" value="${pattern.description}">
+        <label>Width</label>
+        <input type="number" class="pattern-width" placeholder="Width" value="${pattern.width}">
+        <label>Height</label>
+        <input type="number" class="pattern-height" placeholder="Height" value="${pattern.height}">
+        <div class="row-buttons-container">
         <button class="open-camera-for-pattern"><i data-lucide="camera"></i></button>
         <button class="remove-pattern"><i data-lucide="trash-2"></i></button>
-        <button class="move-up">↑</button>
-        <button class="move-down">↓</button>
+        <button class="move-up"><i data-lucide="chevron-up"></i></button>
+        <button class="move-down"><i data-lucide="chevron-down"></i></button>
+        </div>
       `;
       
       // Update pattern values on input change
