@@ -140,7 +140,7 @@ function processFrame() {
     let gray = new cv.Mat();
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
 
-    updateDebugLabel(cv.aruco);
+    
     try {
     // --- Marker Detection & Pose Estimation (wrapped in try-catch) ---
     
@@ -155,9 +155,14 @@ function processFrame() {
         
         cv.aruco.detectMarkers(gray, dictionary, markerCorners, markerIds, parameters);
 
+        if (markerIds.rows > 0) {
+            updateDebugLabel("Marker detected with ID: " + markerIds.data32S[0]);
+        } else {
+            updateDebugLabel("No marker detected in this frame.");
+        }
+
        
 
-        try {
 
         // Check if a marker is detected and if the corners have the expected data
         if (markerIds.rows > 0) {
@@ -231,15 +236,12 @@ let objectPoints = cv.matFromArray(4, 3, cv.CV_32F, [
         markerCorners.delete();
         markerIds.delete();
     } catch (err) {
-       updateDebugLabel("Error during marker detection/pose estimation: " + err);
+       updateDebugLabel("No Marker Detection: " + err);
         // Even if an error occurs, continue processing the frame.
     }
 
     
-} catch (err) {
-    // updateDebugLabel("Error during marker detection/pose estimation: " + err);
-    updateDebugLabel("detect markers not run");
- }
+
     // --- Largest Contour Detection (same as original) ---
     let thresh = new cv.Mat();
     cv.threshold(gray, thresh, 128, 255, cv.THRESH_BINARY);
