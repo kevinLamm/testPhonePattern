@@ -141,13 +141,20 @@ function processFrame() {
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
 
     // --- Marker Detection & Pose Estimation (wrapped in try-catch) ---
-    try {
-        let dictionary = new cv.aruco_Dictionary(cv.aruco.DICT_4X4_250);
+    updateDebugLabel("pre CV aruco");
+        let dictionary = new cv.aruco_Dictionary(cv.aruco.DICT_4X4_1000);
 
         let parameters = new cv.aruco_DetectorParameters();
         let markerCorners = new cv.MatVector();
         let markerIds = new cv.Mat();
+
+        updateDebugLabel("pre detect markers");
+        
         cv.aruco.detectMarkers(gray, dictionary, markerCorners, markerIds, parameters);
+
+        updateDebugLabel("detect markers run: " + markerIds.rows);
+
+        try {
 
         // Check if a marker is detected and if the corners have the expected data
         if (markerIds.rows > 0) {
@@ -221,7 +228,7 @@ let objectPoints = cv.matFromArray(4, 3, cv.CV_32F, [
         markerCorners.delete();
         markerIds.delete();
     } catch (err) {
-        updateDebugLabel("Error during marker detection/pose estimation: " + err);
+       // updateDebugLabel("Error during marker detection/pose estimation: " + err);
         // Even if an error occurs, continue processing the frame.
     }
 
