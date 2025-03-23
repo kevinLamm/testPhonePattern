@@ -15,6 +15,7 @@ let currentStream = null;
 let useBackCamera = true; // Default to back camera
 let processing = true; // Enable processing
 
+
 // Hide the video element (it will still capture frames)
 video.style.display = "none";
 document.body.appendChild(video);
@@ -33,9 +34,10 @@ window.addEventListener("load", () => {
       name: "",
       patterns: []
     };
+    const menu = document.getElementById('menu-nav');
   
   document.getElementById('menu-btn').addEventListener('click', () => {
-    const menu = document.getElementById('menu-nav');
+    
     menu.classList.toggle('hidden');
   });
   
@@ -44,26 +46,31 @@ window.addEventListener("load", () => {
     project.patterns = [];
     document.getElementById('project-name').value = "";
     renderPatternList();
+    menu.classList.toggle('hidden');
   });
   
   document.getElementById('open-project').addEventListener('click', () => {
     // Add logic to load a project (e.g., from local storage or file upload)
     alert("Open Project functionality goes here.");
+    menu.classList.toggle('hidden');
   });
   
   document.getElementById('save-project').addEventListener('click', () => {
     // Add logic to save the project (e.g., download JSON or use local storage)
     alert("Save Project functionality goes here.");
+    menu.classList.toggle('hidden');
   });
   
   document.getElementById('share-project').addEventListener('click', () => {
     // Implement share (e.g., generate shareable link or JSON export)
     alert("Share Project functionality goes here.");
+    menu.classList.toggle('hidden');
   });
   
   document.getElementById('settings-btn').addEventListener('click', () => {
     // Open settings modal or navigate to settings page
     alert("Settings functionality goes here.");
+    menu.classList.toggle('hidden');
   });
   
   document.getElementById('close-camera').addEventListener('click', () => {

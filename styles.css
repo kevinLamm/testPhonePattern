@@ -34,8 +34,8 @@
   /* Hamburger Menu */
   #menu-nav {
     position: absolute;
-    top: 50px;
-    left: 20px;
+    top: 60px;
+    left: 10px;
     background: #444;
     padding: 10px;
     border-radius: 5px;
@@ -126,20 +126,19 @@
   .pattern-preview {
     border: 1px solid #ccc;
     background: #eee;
-    width: 100px;
-    height: 100px;
+    width: 350px;
+    height: 150px;
   }
   .row-buttons-container {
     display: flex;
     flex-direction: row;
-    justify-items: center;
-    
+    justify-content: space-between; /* Distribute items evenly with space between */
+
   }
   /* Buttons inside pattern row */
   .pattern-row button {
     padding: 10px 10px;
-    width: 24px;
-    height: 24px;
+   
     background: #fff;
     color: #333;
     border: 1px solid #ccc;
