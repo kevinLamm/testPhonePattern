@@ -1,11 +1,8 @@
 let video = document.createElement("video"); // Hidden video element
-let canvas = document.getElementById("canvas");
-
+let canvas = document.getElementById("canvas");  // Visible canvas for display
+let processingCanvas = document.getElementById("processing-canvas"); // Offscreen canvas for processing
 let ctx = canvas.getContext("2d");
 let captureButton = document.getElementById("capture-process");
-//captureButton.innerText = "Capture & Process";
-//let cameraView = document.getElementById("camera-view");
-//cameraView.appendChild(captureButton);
 let activePatternIndex = null;
 let largestContourVector = null;
 
@@ -76,8 +73,8 @@ window.addEventListener("load", () => {
 
 });
   
-
-  async function startCamera(facingMode = "environment") {
+// When the video metadata is loaded, set dimensions for both canvases
+async function startCamera(facingMode = "environment") {
     if (currentStream) {
         currentStream.getTracks().forEach(track => track.stop());
     }
@@ -92,32 +89,33 @@ window.addEventListener("load", () => {
             video.play();
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
+            processingCanvas.width = video.videoWidth;
+            processingCanvas.height = video.videoHeight;
             processFrame(); // Start processing
-        
-            // Hide the splash screen when the camera is ready
+
+            // Hide splash screen
             const splash = document.getElementById("splash-screen");
             if (splash) {
               splash.style.display = "none";
             }
         };
-        
     } catch (err) {
         console.error("Error accessing camera:", err);
     }
-    
 }
-
-
 
 function processFrame() {
     if (!processing) return;
-    
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    let src = cv.imread(canvas);
+
+    // Draw the video frame to the hidden processing canvas
+    let pctx = processingCanvas.getContext("2d");
+    pctx.drawImage(video, 0, 0, processingCanvas.width, processingCanvas.height);
+
+    // Read the frame from the processing canvas
+    let src = cv.imread(processingCanvas);
     let gray = new cv.Mat();
     let thresh = new cv.Mat();
 
-    // Convert to grayscale and apply thresholding
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
     cv.threshold(gray, thresh, 128, 255, cv.THRESH_BINARY);
 
@@ -125,11 +123,11 @@ function processFrame() {
     let contours = new cv.MatVector();
     let hierarchy = new cv.Mat();
     cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-    
+
     let largestContour = null;
     let maxArea = 0;
-    let centerX = canvas.width / 2;
-    let centerY = canvas.height / 2;
+    let centerX = processingCanvas.width / 2;
+    let centerY = processingCanvas.height / 2;
 
     for (let i = 0; i < contours.size(); i++) {
         let contour = contours.get(i);
@@ -140,7 +138,6 @@ function processFrame() {
             let cX = moments.m10 / moments.m00;
             let cY = moments.m01 / moments.m00;
 
-            // Ensure the object contains the center point of the camera
             if (cv.pointPolygonTest(contour, new cv.Point(centerX, centerY), false) >= 0) {
                 maxArea = area;
                 largestContour = contour;
@@ -151,35 +148,31 @@ function processFrame() {
     if (largestContour) {
         let edges = new cv.Mat();
         cv.Canny(thresh, edges, 50, 150);
-        largestContourVector = new cv.MatVector();
+        let largestContourVector = new cv.MatVector();
         largestContourVector.push_back(largestContour);
-        
+
         let color = new cv.Scalar(255, 0, 255, 255); // Magenta color
         cv.drawContours(src, largestContourVector, 0, color, 2);
         largestContourVector.delete();
         edges.delete();
     }
 
-    // Display the processed frame on the canvas
+    // Display the processed frame on the visible canvas
     cv.imshow("canvas", src);
 
-    // --- Draw crosshairs on the canvas ---
+    // Draw crosshairs on the visible canvas
     let ctx2d = canvas.getContext("2d");
     ctx2d.save();
     ctx2d.globalCompositeOperation = "difference";
     ctx2d.fillStyle = "white";
-    let crosshairSize = 20; // Crosshair length in pixels
-    // Calculate the center of the canvas
+    let crosshairSize = 20;
     let chCenterX = canvas.width / 2;
     let chCenterY = canvas.height / 2;
-    // Draw horizontal line (20px wide, 1px tall)
     ctx2d.fillRect(chCenterX - crosshairSize / 2, chCenterY - 0.5, crosshairSize, 1);
-    // Draw vertical line (1px wide, 20px tall)
     ctx2d.fillRect(chCenterX - 0.5, chCenterY - crosshairSize / 2, 1, crosshairSize);
     ctx2d.restore();
-    // --- End crosshair drawing ---
 
-    // Cleanup
+    // Cleanup Mats
     src.delete();
     gray.delete();
     thresh.delete();
@@ -189,63 +182,51 @@ function processFrame() {
     requestAnimationFrame(processFrame);
 }
 
-
-// Start with the back camera
 startCamera("environment");
 
-// Capture and process the largest centered object
+// Capture and process using the processing canvas (similar to before)
 captureButton.addEventListener("click", () => {
-    // Read the current frame from the canvas
-   // let src = cv.imread(canvas);
-   // let gray = new cv.Mat();
-   // let thresh = new cv.Mat();
+    // Use the processing canvas to read the current frame
+    let src = cv.imread(processingCanvas);
+    let gray = new cv.Mat();
+    let thresh = new cv.Mat();
 
-    // Convert to grayscale and threshold
-   // cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-   // cv.threshold(gray, thresh, 128, 255, cv.THRESH_BINARY);
+    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+    cv.threshold(gray, thresh, 128, 255, cv.THRESH_BINARY);
 
-    // Find contours in the thresholded image
-   // let contours = new cv.MatVector();
-   // let hierarchy = new cv.Mat();
-    //cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+    let contours = new cv.MatVector();
+    let hierarchy = new cv.Mat();
+    cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
 
     let largestContour = null;
-    //let maxArea = 0;
-    //for (let i = 0; i < contours.size(); i++) {
-    //    let contour = contours.get(i);
-     //   let area = cv.contourArea(contour);
-    //    if (area > maxArea) {
-    //        maxArea = area;
-    //        largestContour = contour;
-    //    }
-   // }
-
-   if (largestContourVector) {
-    largestContour = largestContourVector;
-   
+    let maxArea = 0;
+    for (let i = 0; i < contours.size(); i++) {
+        let contour = contours.get(i);
+        let area = cv.contourArea(contour);
+        if (area > maxArea) {
+            maxArea = area;
+            largestContour = contour;
+        }
+    }
 
     if (largestContour) {
-        // Approximate the contour to a quadrilateral
         let approx = new cv.Mat();
         let peri = cv.arcLength(largestContour, true);
         cv.approxPolyDP(largestContour, approx, 0.02 * peri, true);
 
         if (approx.rows === 4) {
-            // Get the four points and sort them to determine corners
             let points = [];
             for (let i = 0; i < 4; i++) {
                 let x = approx.data32S[i * 2];
                 let y = approx.data32S[i * 2 + 1];
                 points.push({ x, y });
             }
-            // Sort points by y-coordinate to separate top and bottom points
             points.sort((a, b) => a.y - b.y);
             let topPoints = points.slice(0, 2).sort((a, b) => a.x - b.x);
             let bottomPoints = points.slice(2).sort((a, b) => a.x - b.x);
             let topLeft = topPoints[0], topRight = topPoints[1];
             let bottomLeft = bottomPoints[0], bottomRight = bottomPoints[1];
 
-            // Define source and destination points for perspective transform
             let srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
                 topLeft.x, topLeft.y,
                 topRight.x, topRight.y,
@@ -254,78 +235,62 @@ captureButton.addEventListener("click", () => {
             ]);
             let dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
                 0, 0,
-                canvas.width, 0,
-                canvas.width, canvas.height,
-                0, canvas.height
+                processingCanvas.width, 0,
+                processingCanvas.width, processingCanvas.height,
+                0, processingCanvas.height
             ]);
 
-            // Compute perspective transform matrix
             let matrix = cv.getPerspectiveTransform(srcPts, dstPts);
 
-            // Warp the source image for preview
             let warped = new cv.Mat();
-            cv.warpPerspective(src, warped, matrix, new cv.Size(canvas.width, canvas.height));
+            cv.warpPerspective(src, warped, matrix, new cv.Size(processingCanvas.width, processingCanvas.height));
 
-            // Compute the warped contour data:
-            // For each point in the original largestContour, apply the perspective transform.
             let warpedContourData = [];
-            // Ensure we treat the contour points as floats
             let numPoints = largestContour.data32S.length / 2;
-            // Access the transform matrix data (assumed to be CV_64F)
             let m = matrix.data64F;
             for (let i = 0; i < numPoints; i++) {
                 let x = largestContour.data32S[i * 2];
                 let y = largestContour.data32S[i * 2 + 1];
-                // Apply perspective transform:
                 let denominator = m[6] * x + m[7] * y + m[8];
                 let warpedX = (m[0] * x + m[1] * y + m[2]) / denominator;
                 let warpedY = (m[3] * x + m[4] * y + m[5]) / denominator;
                 warpedContourData.push({ x: warpedX, y: warpedY });
             }
 
-            // Draw the warped contour on the preview canvas for feedback
-            //let color = new cv.Scalar(0, 255, 0, 255);
-            //let contourVec = new cv.MatVector();
-            //contourVec.push_back(largestContour);
-            //cv.drawContours(warped, contourVec, 0, color, 2);
-           // cv.imshow("canvas", warped);
-           // contourVec.delete();
+            // Draw the warped contour on the warped image for feedback
+            let color = new cv.Scalar(0, 255, 0, 255);
+            let contourVec = new cv.MatVector();
+            contourVec.push_back(largestContour);
+            cv.drawContours(warped, contourVec, 0, color, 2);
+            cv.imshow("canvas", warped);
+            contourVec.delete();
 
-            // Store the warped contour data in the active pattern
-            if (activePatternIndex !== null) {
-                project.patterns[activePatternIndex].contourData = warpedContourData;
-            }
-            
            
 
-            // Cleanup temporary Mats
             srcPts.delete();
             dstPts.delete();
             matrix.delete();
             warped.delete();
         }
         approx.delete();
-        largestContourVector = null;
-
-    }
     } else {
         console.log("No contour found.");
     }
 
-    // Cleanup
-   // src.delete();
-   // gray.delete();
-   // thresh.delete();
-   // contours.delete();
-   // hierarchy.delete();
-    // Update the pattern list so that the preview canvas is refreshed
-    renderPatternList();
+    src.delete();
+    gray.delete();
+    thresh.delete();
+    contours.delete();
+    hierarchy.delete();
 
-    // Clean up: reset active pattern index and hide camera view
+    if (activePatternIndex !== null) {
+        project.patterns[activePatternIndex].contourData = warpedContourData;
+    }
+
+    renderPatternList();
     activePatternIndex = null;
     document.getElementById('camera-view').classList.add('hidden');
 });
-
 
 
 
