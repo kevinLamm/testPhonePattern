@@ -224,7 +224,11 @@ function captureProcess(event) {
         }
     }
 
+    updateDebugLabel(contours.size());
+
     if (largestContour) {
+        updateDebugLabel("Got largest contour.");
+
         let approx = new cv.Mat();
         let peri = cv.arcLength(largestContour, true);
         cv.approxPolyDP(largestContour, approx, 0.02 * peri, true);
@@ -271,18 +275,13 @@ function captureProcess(event) {
                 let warpedY = (m[3] * x + m[4] * y + m[5]) / denominator;
                 warpedContourData.push({ x: warpedX, y: warpedY });
             }
-
-            // Draw the warped contour on the warped image for feedback
-            //let color = new cv.Scalar(0, 255, 0, 255);
-            //let contourVec = new cv.MatVector();
-            //contourVec.push_back(largestContour);
-            //cv.drawContours(warped, contourVec, 0, color, 2);
-            //cv.imshow("canvas", warped);
-            //contourVec.delete();
-
+            updateDebugLabel("warp completed.");
+            
             if (activePatternIndex !== null) {
                 project.patterns[activePatternIndex].contourData = warpedContourData;
             }
+
+            updateDebugLabel("added contour data to pattern");
         
             renderPatternList();
             activePatternIndex = null;
@@ -292,15 +291,16 @@ function captureProcess(event) {
             matrix.delete();
             warped.delete();
 
-            updateDebugLabel("warp completed.");
+           
            
         }
         approx.delete();
-        updateDebugLabel("Processing completed.");
+       
        
     } else {
         console.log("No contour found.");
-        //updateDebugLabel("Error in capture process: " + error.message);
+        updateDebugLabel("No contour found.");
+       
     }
 
     src.delete();
