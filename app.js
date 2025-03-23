@@ -4,7 +4,10 @@ let processingCanvas = document.getElementById("processing-canvas"); // Offscree
 let ctx = canvas.getContext("2d");
 let captureButton = document.getElementById("capture-process");
 let activePatternIndex = null;
-let largestContourVector = null;
+// Global variables for storing data from each frame
+let lastLargestContour = null;
+let lastMarkerHomography = null; // Homography computed from the marker corners
+
 
 let project = {
     name: "",
@@ -68,11 +71,10 @@ window.addEventListener("load", () => {
   });
   
   document.getElementById("marker-btn").addEventListener("click", function() {
+    menu.classList.toggle('hidden');
     window.open('Marker.pdf', '_blank'); // Open the PDF in a new tab
-});
+  });
 
-
-  
   document.getElementById('settings-btn').addEventListener('click', () => {
     // Open settings modal or navigate to settings page
     alert("Settings functionality goes here.");
@@ -81,7 +83,10 @@ window.addEventListener("load", () => {
   
   document.getElementById('close-camera').addEventListener('click', () => {
     document.getElementById('camera-view').classList.add('hidden');
-    largestContourVector = null;
+    // Global variables for storing data from each frame
+lastLargestContour = null;
+lastMarkerHomography = null; // Homography computed from the marker corners
+
   });
 
 });
@@ -127,12 +132,81 @@ function processFrame() {
     // Read the frame from the processing canvas
     let src = cv.imread(processingCanvas);
     let gray = new cv.Mat();
-    let thresh = new cv.Mat();
-
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-    cv.threshold(gray, thresh, 128, 255, cv.THRESH_BINARY);
 
-    // Find contours
+    // --- ArUco Marker Detection using Homography ---
+    let dictionary = new cv.aruco_Dictionary(cv.aruco.DICT_6X6_250);
+    let parameters = new cv.aruco_DetectorParameters();
+    let markerCorners = new cv.MatVector();
+    let markerIds = new cv.Mat();
+    cv.aruco.detectMarkers(gray, dictionary, markerCorners, markerIds, parameters);
+
+    // If a marker is detected, compute the homography from its corners to a canonical square.
+    if (markerIds.rows > 0) {
+        // Use the first detected marker.
+        let markerCornerMat = markerCorners.get(0);
+
+        // Get marker corners (assuming they are in order: top-left, top-right, bottom-right, bottom-left)
+        let srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
+            markerCornerMat.data32F[0], markerCornerMat.data32F[1],
+            markerCornerMat.data32F[2], markerCornerMat.data32F[3],
+            markerCornerMat.data32F[4], markerCornerMat.data32F[5],
+            markerCornerMat.data32F[6], markerCornerMat.data32F[7]
+        ]);
+
+        // Define destination points for a canonical marker of size 100x100 pixels.
+        let markerSize = 100;
+        let dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
+            0, 0,
+            markerSize, 0,
+            markerSize, markerSize,
+            0, markerSize
+        ]);
+
+        let homography = cv.getPerspectiveTransform(srcPts, dstPts);
+        // Store a clone of the homography globally (for captureProcess use)
+        if (lastMarkerHomography) lastMarkerHomography.delete();
+        lastMarkerHomography = homography.clone();
+
+        // Now, define a set of reference axes in the marker’s coordinate system.
+        // Since we are in 2D, we simulate two axes:
+        // - x-axis: from origin (0,0) to (markerSize, 0)
+        // - y-axis: from origin (0,0) to (0, markerSize)
+        let axesPts = cv.matFromArray(2, 1, cv.CV_32FC2, [
+            0, 0,           // origin
+            markerSize, 0   // end of x-axis
+        ]);
+        let projectedX = new cv.Mat();
+        cv.perspectiveTransform(axesPts, projectedX, cv.getPerspectiveTransform(dstPts, srcPts)); // invert mapping for display
+
+        // Draw x-axis in red.
+        let origin = new cv.Point(markerCornerMat.data32F[0], markerCornerMat.data32F[1]);
+        let xAxisEnd = new cv.Point(projectedX.data32F[2], projectedX.data32F[3]);
+        cv.line(src, origin, xAxisEnd, new cv.Scalar(255, 0, 0, 255), 2);
+        axesPts.delete();
+        projectedX.delete();
+
+        // (Optionally, you could similarly draw a y-axis.)
+        // For example:
+        axesPts = cv.matFromArray(2, 1, cv.CV_32FC2, [
+            0, 0,           // origin
+            0, markerSize   // end of y-axis
+        ]);
+        projectedX = new cv.Mat();
+        cv.perspectiveTransform(axesPts, projectedX, cv.getPerspectiveTransform(dstPts, srcPts));
+        let yAxisEnd = new cv.Point(projectedX.data32F[0], projectedX.data32F[1]);
+        cv.line(src, origin, yAxisEnd, new cv.Scalar(0, 255, 0, 255), 2);
+        axesPts.delete();
+        projectedX.delete();
+
+        srcPts.delete();
+        dstPts.delete();
+        homography.delete();
+    }
+
+    // --- Largest Contour Detection ---
+    let thresh = new cv.Mat();
+    cv.threshold(gray, thresh, 128, 255, cv.THRESH_BINARY);
     let contours = new cv.MatVector();
     let hierarchy = new cv.Mat();
     cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
@@ -150,7 +224,6 @@ function processFrame() {
         if (area > maxArea && moments.m00 !== 0) {
             let cX = moments.m10 / moments.m00;
             let cY = moments.m01 / moments.m00;
-
             if (cv.pointPolygonTest(contour, new cv.Point(centerX, centerY), false) >= 0) {
                 maxArea = area;
                 largestContour = contour;
@@ -159,21 +232,18 @@ function processFrame() {
     }
 
     if (largestContour) {
-        let edges = new cv.Mat();
-        cv.Canny(thresh, edges, 50, 150);
-        let largestContourVector = new cv.MatVector();
-        largestContourVector.push_back(largestContour);
+        // Store a clone of the largest contour for later use in captureProcess.
+        if (lastLargestContour) lastLargestContour.delete();
+        lastLargestContour = largestContour.clone();
 
-        let color = new cv.Scalar(255, 0, 255, 255); // Magenta color
-        cv.drawContours(src, largestContourVector, 0, color, 2);
-        largestContourVector.delete();
-        edges.delete();
+        // Optional: Draw the largest contour in magenta.
+        let contourVector = new cv.MatVector();
+        contourVector.push_back(largestContour);
+        cv.drawContours(src, contourVector, 0, new cv.Scalar(255, 0, 255, 255), 2);
+        contourVector.delete();
     }
 
-    // Display the processed frame on the visible canvas
-    cv.imshow("canvas", src);
-
-    // Draw crosshairs on the visible canvas
+    // --- Draw Crosshairs on the visible canvas ---
     let ctx2d = canvas.getContext("2d");
     ctx2d.save();
     ctx2d.globalCompositeOperation = "difference";
@@ -185,15 +255,21 @@ function processFrame() {
     ctx2d.fillRect(chCenterX - 0.5, chCenterY - crosshairSize / 2, 1, crosshairSize);
     ctx2d.restore();
 
+    // Display the processed frame on the visible canvas.
+    cv.imshow("canvas", src);
+
     // Cleanup Mats
     src.delete();
     gray.delete();
     thresh.delete();
     contours.delete();
     hierarchy.delete();
+    markerCorners.delete();
+    markerIds.delete();
 
     requestAnimationFrame(processFrame);
 }
+
 
 startCamera("environment");
 
@@ -207,124 +283,48 @@ captureButton.addEventListener("click", captureProcess);
 captureButton.addEventListener("touchstart", captureProcess);
 
 function captureProcess(event) {
-    // Prevent the default behavior of the event for touch
     event.preventDefault();
-
     updateDebugLabel("Capture & Process button clicked!");
-    
-    // Use the processing canvas to read the current frame
+
+    // Capture the current frame from the processing canvas (for visual reference, if needed)
     let src = cv.imread(processingCanvas);
     updateDebugLabel("Image captured successfully.");
 
-    let gray = new cv.Mat();
-    let thresh = new cv.Mat();
-
-    cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
-    cv.threshold(gray, thresh, 128, 255, cv.THRESH_BINARY);
-
-    let contours = new cv.MatVector();
-    let hierarchy = new cv.Mat();
-    cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
-
-    let largestContour = null;
-    let maxArea = 0;
-    for (let i = 0; i < contours.size(); i++) {
-        let contour = contours.get(i);
-        let area = cv.contourArea(contour);
-        if (area > maxArea) {
-            maxArea = area;
-            largestContour = contour;
-        }
+    // Check that both the marker homography and the stored largest contour are available.
+    if (!lastMarkerHomography || !lastLargestContour) {
+        updateDebugLabel("Both an ArUco marker and a largest contour must be present.");
+        src.delete();
+        return;
     }
 
-    updateDebugLabel(contours.size());
-
-    if (largestContour) {
-        updateDebugLabel("Got largest contour.");
-
-        let approx = new cv.Mat();
-        let peri = cv.arcLength(largestContour, true);
-        cv.approxPolyDP(largestContour, approx, 0.02 * peri, true);
-
-        if (approx.rows === 4) {
-            let points = [];
-            for (let i = 0; i < 4; i++) {
-                let x = approx.data32S[i * 2];
-                let y = approx.data32S[i * 2 + 1];
-                points.push({ x, y });
-            }
-            points.sort((a, b) => a.y - b.y);
-            let topPoints = points.slice(0, 2).sort((a, b) => a.x - b.x);
-            let bottomPoints = points.slice(2).sort((a, b) => a.x - b.x);
-            let topLeft = topPoints[0], topRight = topPoints[1];
-            let bottomLeft = bottomPoints[0], bottomRight = bottomPoints[1];
-
-            let srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
-                topLeft.x, topLeft.y,
-                topRight.x, topRight.y,
-                bottomRight.x, bottomRight.y,
-                bottomLeft.x, bottomLeft.y
-            ]);
-            let dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
-                0, 0,
-                processingCanvas.width, 0,
-                processingCanvas.width, processingCanvas.height,
-                0, processingCanvas.height
-            ]);
-
-            let matrix = cv.getPerspectiveTransform(srcPts, dstPts);
-
-            let warped = new cv.Mat();
-            cv.warpPerspective(src, warped, matrix, new cv.Size(processingCanvas.width, processingCanvas.height));
-
-            let warpedContourData = [];
-            let numPoints = largestContour.data32S.length / 2;
-            let m = matrix.data64F;
-            for (let i = 0; i < numPoints; i++) {
-                let x = largestContour.data32S[i * 2];
-                let y = largestContour.data32S[i * 2 + 1];
-                let denominator = m[6] * x + m[7] * y + m[8];
-                let warpedX = (m[0] * x + m[1] * y + m[2]) / denominator;
-                let warpedY = (m[3] * x + m[4] * y + m[5]) / denominator;
-                warpedContourData.push({ x: warpedX, y: warpedY });
-            }
-            updateDebugLabel("warp completed.");
-            
-            //if (activePatternIndex !== null) {
-                project.patterns[activePatternIndex].contourData = warpedContourData;
-            //}
-
-            updateDebugLabel("added contour data to pattern");
-        
-            renderPatternList();
-          //  activePatternIndex = null;
-
-            srcPts.delete();
-            dstPts.delete();
-            matrix.delete();
-            warped.delete();
-
-           
-           
-        }
-        approx.delete();
-       
-       
-    } else {
-        console.log("No contour found.");
-        updateDebugLabel("No contour found.");
-       
+    // Compute warped contour points using the stored homography.
+    // Note: lastMarkerHomography maps points from the marker's image coordinate space to the canonical marker space.
+    // To apply this same transformation to the largest contour, we use its transformation.
+    let warpedContourData = [];
+    let numPoints = lastLargestContour.data32S.length / 2;
+    // Access the homography data (a 3x3 matrix in a flat array)
+    let m = lastMarkerHomography.data64F;
+    for (let i = 0; i < numPoints; i++) {
+        let x = lastLargestContour.data32S[i * 2];
+        let y = lastLargestContour.data32S[i * 2 + 1];
+        let denominator = m[6] * x + m[7] * y + m[8];
+        let warpedX = (m[0] * x + m[1] * y + m[2]) / denominator;
+        let warpedY = (m[3] * x + m[4] * y + m[5]) / denominator;
+        warpedContourData.push({ x: warpedX, y: warpedY });
     }
 
-    src.delete();
-    gray.delete();
-    thresh.delete();
-    contours.delete();
-    hierarchy.delete();
-
-    
+    // Send the warped contour data to your pattern processing.
+    if (activePatternIndex !== null) {
+        project.patterns[activePatternIndex].contourData = warpedContourData;
+    }
+    renderPatternList();
+    activePatternIndex = null;
     document.getElementById('camera-view').classList.add('hidden');
-};
+
+    // Cleanup
+    src.delete();
+}
+
 
 
 
