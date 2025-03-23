@@ -140,19 +140,22 @@ function processFrame() {
     let gray = new cv.Mat();
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
 
+    updateDebugLabel(cv.aruco);
+    try {
     // --- Marker Detection & Pose Estimation (wrapped in try-catch) ---
-    updateDebugLabel("pre CV aruco");
-        let dictionary = new cv.aruco_Dictionary(cv.aruco.DICT_4X4_1000);
+    
+    let dictionary = cv.aruco.getPredefinedDictionary(cv.aruco.DICT_4X4_250);
+    let parameters = cv.aruco.getDefaultDetectorParameters();
+    let markerCorners = new cv.MatVector();
+    let markerIds = new cv.Mat();
+    
 
-        let parameters = new cv.aruco_DetectorParameters();
-        let markerCorners = new cv.MatVector();
-        let markerIds = new cv.Mat();
 
-        updateDebugLabel("pre detect markers");
+       
         
         cv.aruco.detectMarkers(gray, dictionary, markerCorners, markerIds, parameters);
 
-        updateDebugLabel("detect markers run: " + markerIds.rows);
+       
 
         try {
 
@@ -228,10 +231,15 @@ let objectPoints = cv.matFromArray(4, 3, cv.CV_32F, [
         markerCorners.delete();
         markerIds.delete();
     } catch (err) {
-       // updateDebugLabel("Error during marker detection/pose estimation: " + err);
+       updateDebugLabel("Error during marker detection/pose estimation: " + err);
         // Even if an error occurs, continue processing the frame.
     }
 
+    
+} catch (err) {
+    // updateDebugLabel("Error during marker detection/pose estimation: " + err);
+    updateDebugLabel("detect markers run: " + markerIds.rows);
+ }
     // --- Largest Contour Detection (same as original) ---
     let thresh = new cv.Mat();
     cv.threshold(gray, thresh, 128, 255, cv.THRESH_BINARY);
