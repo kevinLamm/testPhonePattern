@@ -142,7 +142,8 @@ function processFrame() {
 
     // --- Marker Detection & Pose Estimation (wrapped in try-catch) ---
     try {
-        let dictionary = new cv.aruco_Dictionary(cv.aruco.DICT_6X6_250);
+        let dictionary = new cv.aruco_Dictionary(cv.aruco.DICT_4X4_250);
+
         let parameters = new cv.aruco_DetectorParameters();
         let markerCorners = new cv.MatVector();
         let markerIds = new cv.Mat();
@@ -161,13 +162,14 @@ function processFrame() {
                 ]);
 
                 // Define object points in 3D for the marker corners.
-                let markerSize = 1.0;
-                let objectPoints = cv.matFromArray(4, 3, cv.CV_32F, [
-                    0, 0, 0,
-                    markerSize, 0, 0,
-                    markerSize, markerSize, 0,
-                    0, markerSize, 0
-                ]);
+                let markerSize = 101.6; // in mm
+let objectPoints = cv.matFromArray(4, 3, cv.CV_32F, [
+    0, 0, 0,
+    markerSize, 0, 0,
+    markerSize, markerSize, 0,
+    0, markerSize, 0
+]);
+
 
                 // Approximate a camera matrix
                 let f = canvas.width;
