@@ -145,12 +145,12 @@ function processFrame() {
     // --- Marker Detection & Pose Estimation (wrapped in try-catch) ---
     
     let dictionary = cv.aruco.getPredefinedDictionary(cv.aruco.DICT_4X4_250);
-    let parameters = cv.aruco.getDefaultDetectorParameters();
+    let parameters = new cv.aruco.DetectorParameters();
     let markerCorners = new cv.MatVector();
     let markerIds = new cv.Mat();
     
 
-
+    console.log(cv.aruco && cv.aruco.DetectorParameters);
        
         
         cv.aruco.detectMarkers(gray, dictionary, markerCorners, markerIds, parameters);
