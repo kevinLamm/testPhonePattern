@@ -122,6 +122,12 @@ async function startCamera(facingMode = "environment") {
     }
 }
 
+
+function updateDebugLabel(message) {
+    const debugLabel = document.getElementById('debug-label');
+    debugLabel.textContent = message;
+}
+
 function processFrame() {
     if (!processing) return;
 
@@ -134,77 +140,90 @@ function processFrame() {
     let gray = new cv.Mat();
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
 
-    // --- ArUco Marker Detection using Homography ---
-    let dictionary = new cv.aruco_Dictionary(cv.aruco.DICT_6X6_250);
-    let parameters = new cv.aruco_DetectorParameters();
-    let markerCorners = new cv.MatVector();
-    let markerIds = new cv.Mat();
-    cv.aruco.detectMarkers(gray, dictionary, markerCorners, markerIds, parameters);
+    // --- Marker Detection & Pose Estimation (wrapped in try-catch) ---
+    try {
+        let dictionary = new cv.aruco_Dictionary(cv.aruco.DICT_6X6_250);
+        let parameters = new cv.aruco_DetectorParameters();
+        let markerCorners = new cv.MatVector();
+        let markerIds = new cv.Mat();
+        cv.aruco.detectMarkers(gray, dictionary, markerCorners, markerIds, parameters);
 
-    // If a marker is detected, compute the homography from its corners to a canonical square.
-    if (markerIds.rows > 0) {
-        // Use the first detected marker.
-        let markerCornerMat = markerCorners.get(0);
+        // Check if a marker is detected and if the corners have the expected data
+        if (markerIds.rows > 0) {
+            let markerCornerMat = markerCorners.get(0);
+            if (markerCornerMat.data32F && markerCornerMat.data32F.length === 8) {
+                // Create image points from the marker corners
+                let imagePoints = cv.matFromArray(4, 2, cv.CV_32F, [
+                    markerCornerMat.data32F[0], markerCornerMat.data32F[1],
+                    markerCornerMat.data32F[2], markerCornerMat.data32F[3],
+                    markerCornerMat.data32F[4], markerCornerMat.data32F[5],
+                    markerCornerMat.data32F[6], markerCornerMat.data32F[7]
+                ]);
 
-        // Get marker corners (assuming they are in order: top-left, top-right, bottom-right, bottom-left)
-        let srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
-            markerCornerMat.data32F[0], markerCornerMat.data32F[1],
-            markerCornerMat.data32F[2], markerCornerMat.data32F[3],
-            markerCornerMat.data32F[4], markerCornerMat.data32F[5],
-            markerCornerMat.data32F[6], markerCornerMat.data32F[7]
-        ]);
+                // Define object points in 3D for the marker corners.
+                let markerSize = 1.0;
+                let objectPoints = cv.matFromArray(4, 3, cv.CV_32F, [
+                    0, 0, 0,
+                    markerSize, 0, 0,
+                    markerSize, markerSize, 0,
+                    0, markerSize, 0
+                ]);
 
-        // Define destination points for a canonical marker of size 100x100 pixels.
-        let markerSize = 100;
-        let dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
-            0, 0,
-            markerSize, 0,
-            markerSize, markerSize,
-            0, markerSize
-        ]);
+                // Approximate a camera matrix
+                let f = canvas.width;
+                let cx = canvas.width / 2;
+                let cy = canvas.height / 2;
+                let cameraMatrix = cv.matFromArray(3, 3, cv.CV_32F, [
+                    f, 0, cx,
+                    0, f, cy,
+                    0, 0, 1
+                ]);
+                let distCoeffs = cv.Mat.zeros(4, 1, cv.CV_32F);
 
-        let homography = cv.getPerspectiveTransform(srcPts, dstPts);
-        // Store a clone of the homography globally (for captureProcess use)
-        if (lastMarkerHomography) lastMarkerHomography.delete();
-        lastMarkerHomography = homography.clone();
+                let rvec = new cv.Mat();
+                let tvec = new cv.Mat();
+                let success = cv.solvePnP(objectPoints, imagePoints, cameraMatrix, distCoeffs, rvec, tvec);
+                if (success) {
+                    // Define 3D points for the axes: origin, x, y, and z
+                    let axisPoints = cv.matFromArray(4, 3, cv.CV_32F, [
+                        0, 0, 0,
+                        markerSize, 0, 0,
+                        0, markerSize, 0,
+                        0, 0, -markerSize
+                    ]);
+                    let imagePointsAxes = new cv.Mat();
+                    cv.projectPoints(axisPoints, rvec, tvec, cameraMatrix, distCoeffs, imagePointsAxes);
 
-        // Now, define a set of reference axes in the marker’s coordinate system.
-        // Since we are in 2D, we simulate two axes:
-        // - x-axis: from origin (0,0) to (markerSize, 0)
-        // - y-axis: from origin (0,0) to (0, markerSize)
-        let axesPts = cv.matFromArray(2, 1, cv.CV_32FC2, [
-            0, 0,           // origin
-            markerSize, 0   // end of x-axis
-        ]);
-        let projectedX = new cv.Mat();
-        cv.perspectiveTransform(axesPts, projectedX, cv.getPerspectiveTransform(dstPts, srcPts)); // invert mapping for display
+                    // Draw the axes
+                    let origin   = new cv.Point(imagePointsAxes.data32F[0], imagePointsAxes.data32F[1]);
+                    let xAxisEnd = new cv.Point(imagePointsAxes.data32F[2], imagePointsAxes.data32F[3]);
+                    let yAxisEnd = new cv.Point(imagePointsAxes.data32F[4], imagePointsAxes.data32F[5]);
+                    let zAxisEnd = new cv.Point(imagePointsAxes.data32F[6], imagePointsAxes.data32F[7]);
+                    cv.line(src, origin, xAxisEnd, new cv.Scalar(255, 0, 0, 255), 2);
+                    cv.line(src, origin, yAxisEnd, new cv.Scalar(0, 255, 0, 255), 2);
+                    cv.line(src, origin, zAxisEnd, new cv.Scalar(0, 0, 255, 255), 2);
 
-        // Draw x-axis in red.
-        let origin = new cv.Point(markerCornerMat.data32F[0], markerCornerMat.data32F[1]);
-        let xAxisEnd = new cv.Point(projectedX.data32F[2], projectedX.data32F[3]);
-        cv.line(src, origin, xAxisEnd, new cv.Scalar(255, 0, 0, 255), 2);
-        axesPts.delete();
-        projectedX.delete();
+                    axisPoints.delete();
+                    imagePointsAxes.delete();
+                }
 
-        // (Optionally, you could similarly draw a y-axis.)
-        // For example:
-        axesPts = cv.matFromArray(2, 1, cv.CV_32FC2, [
-            0, 0,           // origin
-            0, markerSize   // end of y-axis
-        ]);
-        projectedX = new cv.Mat();
-        cv.perspectiveTransform(axesPts, projectedX, cv.getPerspectiveTransform(dstPts, srcPts));
-        let yAxisEnd = new cv.Point(projectedX.data32F[0], projectedX.data32F[1]);
-        cv.line(src, origin, yAxisEnd, new cv.Scalar(0, 255, 0, 255), 2);
-        axesPts.delete();
-        projectedX.delete();
-
-        srcPts.delete();
-        dstPts.delete();
-        homography.delete();
+                // Clean up marker-related Mats
+                objectPoints.delete();
+                imagePoints.delete();
+                cameraMatrix.delete();
+                distCoeffs.delete();
+                rvec.delete();
+                tvec.delete();
+            }
+        }
+        markerCorners.delete();
+        markerIds.delete();
+    } catch (err) {
+        updateDebugLabel("Error during marker detection/pose estimation: " + err);
+        // Even if an error occurs, continue processing the frame.
     }
 
-    // --- Largest Contour Detection ---
+    // --- Largest Contour Detection (same as original) ---
     let thresh = new cv.Mat();
     cv.threshold(gray, thresh, 128, 255, cv.THRESH_BINARY);
     let contours = new cv.MatVector();
@@ -215,12 +234,10 @@ function processFrame() {
     let maxArea = 0;
     let centerX = processingCanvas.width / 2;
     let centerY = processingCanvas.height / 2;
-
     for (let i = 0; i < contours.size(); i++) {
         let contour = contours.get(i);
         let area = cv.contourArea(contour);
         let moments = cv.moments(contour);
-
         if (area > maxArea && moments.m00 !== 0) {
             let cX = moments.m10 / moments.m00;
             let cY = moments.m01 / moments.m00;
@@ -230,35 +247,29 @@ function processFrame() {
             }
         }
     }
-
     if (largestContour) {
-        // Store a clone of the largest contour for later use in captureProcess.
-        if (lastLargestContour) lastLargestContour.delete();
+        if (lastLargestContour) { lastLargestContour.delete(); }
         lastLargestContour = largestContour.clone();
-
-        // Optional: Draw the largest contour in magenta.
         let contourVector = new cv.MatVector();
         contourVector.push_back(largestContour);
         cv.drawContours(src, contourVector, 0, new cv.Scalar(255, 0, 255, 255), 2);
         contourVector.delete();
     }
 
-    
-
-    // Display the processed frame on the visible canvas.
+    // --- Display Processed Frame ---
     cv.imshow("canvas", src);
 
-    // Now, draw crosshairs on top of the image.
-let ctx2d = canvas.getContext("2d");
-ctx2d.save();
-ctx2d.globalCompositeOperation = "difference";
-ctx2d.fillStyle = "white";
-let crosshairSize = 20;
-let chCenterX = canvas.width / 2;
-let chCenterY = canvas.height / 2;
-ctx2d.fillRect(chCenterX - crosshairSize / 2, chCenterY - 0.5, crosshairSize, 1);
-ctx2d.fillRect(chCenterX - 0.5, chCenterY - crosshairSize / 2, 1, crosshairSize);
-ctx2d.restore();
+    // --- Draw Crosshairs on Top ---
+    let ctx2d = canvas.getContext("2d");
+    ctx2d.save();
+    ctx2d.globalCompositeOperation = "difference";
+    ctx2d.fillStyle = "white";
+    let crosshairSize = 20;
+    let chCenterX = canvas.width / 2;
+    let chCenterY = canvas.height / 2;
+    ctx2d.fillRect(chCenterX - crosshairSize / 2, chCenterY - 0.5, crosshairSize, 1);
+    ctx2d.fillRect(chCenterX - 0.5, chCenterY - crosshairSize / 2, 1, crosshairSize);
+    ctx2d.restore();
 
     // Cleanup Mats
     src.delete();
@@ -266,19 +277,16 @@ ctx2d.restore();
     thresh.delete();
     contours.delete();
     hierarchy.delete();
-    markerCorners.delete();
-    markerIds.delete();
 
     requestAnimationFrame(processFrame);
 }
 
 
+
+
 startCamera("environment");
 
-function updateDebugLabel(message) {
-    const debugLabel = document.getElementById('debug-label');
-    debugLabel.textContent = message;
-}
+
 
 
 captureButton.addEventListener("click", captureProcess);
