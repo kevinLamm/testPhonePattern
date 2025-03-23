@@ -277,14 +277,14 @@ function captureProcess(event) {
             }
             updateDebugLabel("warp completed.");
             
-            if (activePatternIndex !== null) {
+            //if (activePatternIndex !== null) {
                 project.patterns[activePatternIndex].contourData = warpedContourData;
-            }
+            //}
 
             updateDebugLabel("added contour data to pattern");
         
             renderPatternList();
-            activePatternIndex = null;
+          //  activePatternIndex = null;
 
             srcPts.delete();
             dstPts.delete();
