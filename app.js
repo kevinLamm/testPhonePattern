@@ -184,10 +184,25 @@ function processFrame() {
 
 startCamera("environment");
 
-// Capture and process using the processing canvas (similar to before)
-captureButton.addEventListener("click", () => {
+function updateDebugLabel(message) {
+    const debugLabel = document.getElementById('debug-label');
+    debugLabel.textContent = message;
+}
+
+
+captureButton.addEventListener("click", captureProcess);
+captureButton.addEventListener("touchstart", captureProcess);
+
+function captureProcess(event) {
+    // Prevent the default behavior of the event for touch
+    event.preventDefault();
+
+    updateDebugLabel("Capture & Process button clicked!");
+    
     // Use the processing canvas to read the current frame
     let src = cv.imread(processingCanvas);
+    updateDebugLabel("Image captured successfully.");
+
     let gray = new cv.Mat();
     let thresh = new cv.Mat();
 
@@ -273,8 +288,10 @@ captureButton.addEventListener("click", () => {
             warped.delete();
         }
         approx.delete();
+        updateDebugLabel("Processing completed.");
     } else {
         console.log("No contour found.");
+        updateDebugLabel("Error in capture process: " + error.message);
     }
 
     src.delete();
@@ -290,7 +307,7 @@ captureButton.addEventListener("click", () => {
     renderPatternList();
     activePatternIndex = null;
     document.getElementById('camera-view').classList.add('hidden');
-});
+};
 
 
 
