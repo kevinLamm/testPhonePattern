@@ -151,6 +151,8 @@ function processFrame() {
         var detector = new jsAruco.AR.Detector();
         let markers = detector.detect(imageData);
 
+        updateDebugLabel("Marker Count: " + markers.length);
+
         if (markers.length > 0) {
             // Use the first detected marker.
             let marker = markers[0];
@@ -178,7 +180,7 @@ function processFrame() {
                     y: (canvas.height / 2) - corners[i].y
                 });
             }
-            let modelSize = 101.6; // Marker size in millimeters.
+            let modelSize = 127; // Marker size in millimeters.
             // Create a POS.Posit object (using, for example, POS1 version).
             var posit = new jsAruco.POS.Posit(modelSize, canvas.width);
             var pose = posit.pose(adjustedCorners);
@@ -225,7 +227,7 @@ function processFrame() {
             cv.line(src, origin2D, yAxis2D, new cv.Scalar(0, 255, 0, 255), 2);
             cv.line(src, origin2D, zAxis2D, new cv.Scalar(0, 0, 255, 255), 2);
         } else {
-            updateDebugLabel("No marker detected in this frame.");
+           // updateDebugLabel("No marker detected in this frame.");
         }
     } catch (err) {
         updateDebugLabel("Error in marker detection/pose: " + err);
