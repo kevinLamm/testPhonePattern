@@ -40,7 +40,8 @@ window.addEventListener("load", () => {
     const menu = document.getElementById('menu-nav');
   
   document.getElementById('menu-btn').addEventListener('click', () => {
-    
+    console.log("Is aruco installed?");
+  console.log("aruco installed: ", cv.aruco);
     menu.classList.toggle('hidden');
   });
   
@@ -88,7 +89,7 @@ lastLargestContour = null;
 lastMarkerHomography = null; // Homography computed from the marker corners
 
   });
-  console.log(cv.aruco);
+  
 });
   
 // When the video metadata is loaded, set dimensions for both canvases
