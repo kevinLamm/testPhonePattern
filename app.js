@@ -182,8 +182,11 @@ function processFrame() {
             }
             let modelSize = 127; // Marker size in millimeters.
             // Create a POS.Posit object (using, for example, POS1 version).
-            var posit = new POS.Posit(modelSize, canvas.width);
+            updateDebugLabel("Pre-Pose");
+            var posit = new jsAruco.POS.Posit(modelSize, canvas.width);
             var pose = posit.pose(adjustedCorners);
+
+            updateDebugLabel("Pose");
 
             // For drawing axes, we need to project 3D points using the estimated pose.
             // We'll define a simple projection function. (This is an approximation.)
@@ -216,6 +219,8 @@ function processFrame() {
             let R = pose.bestRotation; // Expected as a 3x3 nested array.
             let t = pose.bestTranslation; // Expected as an array of length 3.
 
+            updateDebugLabel("pose.bestTranslation");
+
             // Project the endpoints.
             let origin2D = projectPoint(origin3D, R, t, f, cx, cy);
             let xAxis2D = projectPoint(xAxis3D, R, t, f, cx, cy);
@@ -230,7 +235,7 @@ function processFrame() {
            // updateDebugLabel("No marker detected in this frame.");
         }
     } catch (err) {
-        updateDebugLabel("Error in marker detection/pose: " + err);
+        //updateDebugLabel("Error in marker detection/pose: " + err);
     }
 
     // -------- Largest Contour Detection (same as original) --------
