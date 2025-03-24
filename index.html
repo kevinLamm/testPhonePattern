@@ -18,12 +18,12 @@
   </script>
   <script src="https://docs.opencv.org/5.0.0-alpha/opencv.js" onload="onOpenCvReady();"></script>
   <script type="module">
-    import * as jsaruco from "https://esm.sh/js-aruco";
-    window.jsAruco = jsaruco;
-    console.log("jsAruco loaded:", window.jsAruco);
-    console.log("AR loaded:", window.jsAruco.AR);
-    console.log("POS loaded:", window.jsAruco.AR.POS);
+    import { AR, POS1, POS2 } from "https://cdn.skypack.dev/js-aruco@0.1.0";
+    console.log("AR:", AR);
+    console.log("POS:", POS);
+   
   </script>
+  
   
   <script src="libs/dxf-doc.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>
