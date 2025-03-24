@@ -41,7 +41,7 @@ window.addEventListener("load", () => {
   
   document.getElementById('menu-btn').addEventListener('click', () => {
     console.log("Is aruco installed?");
-  console.log("aruco installed: ", cv.aruco);
+  console.log("aruco installed: ", window.jsAruco);
     menu.classList.toggle('hidden');
   });
   
@@ -148,7 +148,7 @@ function processFrame() {
     try {
         // Create an AR.Detector from js-aruco.
         // (Assuming js-aruco attaches AR to the global namespace.)
-        let detector = new AR.Detector();
+        var detector = new jsAruco.AR.Detector();
         let markers = detector.detect(imageData);
 
         if (markers.length > 0) {
