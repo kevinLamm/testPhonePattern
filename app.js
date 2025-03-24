@@ -182,7 +182,7 @@ function processFrame() {
             }
             let modelSize = 127; // Marker size in millimeters.
             // Create a POS.Posit object (using, for example, POS1 version).
-            var posit = new jsAruco.POS.Posit(modelSize, canvas.width);
+            var posit = new POS.Posit(modelSize, canvas.width);
             var pose = posit.pose(adjustedCorners);
 
             // For drawing axes, we need to project 3D points using the estimated pose.
