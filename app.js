@@ -13,7 +13,7 @@ let video = document.createElement("video"); // Hidden video element
 let canvas = document.getElementById("canvas");  // Visible canvas for display
 let processingCanvas = document.getElementById("processing-canvas"); // Offscreen canvas for processing
 let ctx = canvas.getContext("2d");
-let captureButton = document.getElementById("capture-process");
+const captureButton = document.getElementById("capture-process");
 let activePatternIndex = null;
 // Global variables for storing data from each frame
 let lastLargestContour = null;
@@ -182,18 +182,46 @@ function processFrame() {
                 );
             }
 
-            // ----- 3D Pose Estimation Using solvePnP -----
-            // Define marker size (in millimeters) and set up object points.
+            // ----- Compute Homography from Marker Corners -----
+            // Define marker size (in millimeters) for the canonical marker coordinate system.
             let modelSize = 127;
-            // Object points: marker corners in 3D (marker coordinate system with origin at the center)
+            // Create a Mat for the source points (detected marker corners).
+            let srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
+                corners[0].x, corners[0].y,
+                corners[1].x, corners[1].y,
+                corners[2].x, corners[2].y,
+                corners[3].x, corners[3].y
+            ]);
+            // Define destination points: mapping to a square starting at (0, 0).
+            let dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
+                0, 0,
+                modelSize, 0,
+                modelSize, modelSize,
+                0, modelSize
+            ]);
+
+            // Compute the homography matrix.
+            let homography = cv.findHomography(srcPts, dstPts);
+            // Store the computed homography in lastMarkerHomography.
+            if (lastMarkerHomography) { 
+                lastMarkerHomography.delete(); 
+            }
+            lastMarkerHomography = homography.clone();
+
+            // Clean up the temporary Mats.
+            srcPts.delete();
+            dstPts.delete();
+            homography.delete();
+
+            // ----- 3D Pose Estimation Using solvePnP -----
+            // Object points for pose estimation (marker corners in 3D, centered on the marker).
             let objectPoints = cv.matFromArray(4, 1, cv.CV_32FC3, [
                 -modelSize / 2, -modelSize / 2, 0,
                  modelSize / 2, -modelSize / 2, 0,
                  modelSize / 2,  modelSize / 2, 0,
                 -modelSize / 2,  modelSize / 2, 0
             ]);
-
-            // Image points: use detected corners (ensure they are in the same order as objectPoints)
+            // Use the same order for image points.
             let imagePoints = cv.matFromArray(4, 1, cv.CV_32FC2, [
                 corners[0].x, corners[0].y,
                 corners[1].x, corners[1].y,
@@ -263,7 +291,7 @@ function processFrame() {
 
     // ----- Largest Contour Detection (as before) -----
     let thresh = new cv.Mat();
-    cv.threshold(gray, thresh, 128, 255, cv.THRESH_BINARY);
+    cv.threshold(gray, thresh, 220, 255, cv.THRESH_BINARY);
     let contours = new cv.MatVector();
     let hierarchy = new cv.Mat();
     cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
@@ -286,7 +314,9 @@ function processFrame() {
         }
     }
     if (largestContour) {
-        if (lastLargestContour) { lastLargestContour.delete(); }
+        if (lastLargestContour) { 
+            lastLargestContour.delete(); 
+        }
         lastLargestContour = largestContour.clone();
         let contourVector = new cv.MatVector();
         contourVector.push_back(largestContour);
@@ -318,6 +348,7 @@ function processFrame() {
 
     requestAnimationFrame(processFrame);
 }
+
 
 
 
