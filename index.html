@@ -17,18 +17,7 @@
     }
   </script>
   <script src="https://docs.opencv.org/5.0.0-alpha/opencv.js" onload="onOpenCvReady();"></script>
-  <script type="module">
-    import jsaruco from "https://cdn.skypack.dev/js-aruco@0.1.0";
-    
-    // Extract AR and POS (choose POS1 or POS2 based on your needs)
-    const AR = jsaruco.AR;
-    const POS = jsaruco.POS1;  // or jsaruco.POS2
-    
-    
-    console.log("AR:", AR);
-   
-    console.log("POS:", POS);
-  </script>
+ 
   
   
   <script src="libs/dxf-doc.js"></script>
@@ -108,6 +97,6 @@
     lucide.createIcons();
  
   </script>
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

@@ -1,3 +1,14 @@
+import jsaruco from "https://cdn.skypack.dev/js-aruco@0.1.0";
+    
+    // Extract AR and POS (choose POS1 or POS2 based on your needs)
+    const AR = jsaruco.AR;
+    const POS = jsaruco.POS1;  // or jsaruco.POS2
+    
+    
+    console.log("AR:", AR);
+   
+    console.log("POS:", POS);
+
 let video = document.createElement("video"); // Hidden video element
 let canvas = document.getElementById("canvas");  // Visible canvas for display
 let processingCanvas = document.getElementById("processing-canvas"); // Offscreen canvas for processing
@@ -8,9 +19,7 @@ let activePatternIndex = null;
 let lastLargestContour = null;
 let lastMarkerHomography = null; // Homography computed from the marker corners
 
- // Extract AR and POS (choose POS1 or POS2 based on your needs)
- const AR = jsaruco.AR;
- const POS = jsaruco.POS1;  // or jsaruco.POS2
+ 
 
 let project = {
     name: "",
