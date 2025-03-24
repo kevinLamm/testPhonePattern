@@ -41,7 +41,7 @@ window.addEventListener("load", () => {
   
   document.getElementById('menu-btn').addEventListener('click', () => {
     console.log("Is aruco installed?");
-  console.log("aruco installed: ", window.jsAruco);
+  
     menu.classList.toggle('hidden');
   });
   
@@ -147,8 +147,8 @@ function processFrame() {
     // -------- Marker Detection & Pose Estimation using js-aruco --------
     try {
         // Create an AR.Detector from js-aruco.
-        // (Assuming js-aruco attaches AR to the global namespace.)
-        var detector = new jsAruco.AR.Detector();
+        var AR = require('js-aruco').AR;
+        var detector = new AR.Detector();
         let markers = detector.detect(imageData);
 
         if (markers.length > 0) {
