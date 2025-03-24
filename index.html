@@ -18,10 +18,16 @@
   </script>
   <script src="https://docs.opencv.org/5.0.0-alpha/opencv.js" onload="onOpenCvReady();"></script>
   <script type="module">
-    import { AR, POS1, POS2 } from "https://cdn.skypack.dev/js-aruco@0.1.0";
+    import jsaruco from "https://cdn.skypack.dev/js-aruco@0.1.0";
+    
+    // Extract AR and POS (choose POS1 or POS2 based on your needs)
+    const AR = jsaruco.AR;
+    const POS = jsaruco.POS1;  // or jsaruco.POS2
+    
+    
     console.log("AR:", AR);
-    console.log("POS:", POS);
    
+    console.log("POS:", POS);
   </script>
   
   
