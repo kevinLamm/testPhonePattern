@@ -8,6 +8,9 @@ let activePatternIndex = null;
 let lastLargestContour = null;
 let lastMarkerHomography = null; // Homography computed from the marker corners
 
+ // Extract AR and POS (choose POS1 or POS2 based on your needs)
+ const AR = jsaruco.AR;
+ const POS = jsaruco.POS1;  // or jsaruco.POS2
 
 let project = {
     name: "",
@@ -232,10 +235,10 @@ function processFrame() {
             cv.line(src, origin2D, yAxis2D, new cv.Scalar(0, 255, 0, 255), 2);
             cv.line(src, origin2D, zAxis2D, new cv.Scalar(0, 0, 255, 255), 2);
         } else {
-           // updateDebugLabel("No marker detected in this frame.");
+           updateDebugLabel("No marker detected in this frame.");
         }
     } catch (err) {
-        //updateDebugLabel("Error in marker detection/pose: " + err);
+        updateDebugLabel("Error in marker detection/pose: " + err);
     }
 
     // -------- Largest Contour Detection (same as original) --------
