@@ -147,8 +147,8 @@ function processFrame() {
     // -------- Marker Detection & Pose Estimation using js-aruco --------
     try {
         // Create an AR.Detector from js-aruco.
-        var AR = require('js-aruco').AR;
-        var detector = new AR.Detector();
+       
+        var detector = new jsAruco.AR.Detector();
         let markers = detector.detect(imageData);
 
         if (markers.length > 0) {
