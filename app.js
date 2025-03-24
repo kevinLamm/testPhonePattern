@@ -103,6 +103,11 @@ lastMarkerHomography = null; // Homography computed from the marker corners
   });
   
 });
+
+function updateDebugLabel(message) {
+    const debugLabel = document.getElementById('debug-label');
+    debugLabel.textContent = message;
+}
   
 // When the video metadata is loaded, set dimensions for both canvases
 async function startCamera(facingMode = "environment") {
@@ -136,10 +141,7 @@ async function startCamera(facingMode = "environment") {
 }
 
 
-function updateDebugLabel(message) {
-    const debugLabel = document.getElementById('debug-label');
-    debugLabel.textContent = message;
-}
+
 
 function processFrame() {
     if (!processing) return;
@@ -148,7 +150,7 @@ function processFrame() {
     let pctx = processingCanvas.getContext("2d");
     pctx.drawImage(video, 0, 0, processingCanvas.width, processingCanvas.height);
 
-    // Get the ImageData from the processing canvas for js-aruco detection.
+    // Get the ImageData for js-aruco detection.
     let imageData = pctx.getImageData(0, 0, processingCanvas.width, processingCanvas.height);
 
     // Also read the frame into an OpenCV Mat for drawing and further processing.
@@ -156,22 +158,19 @@ function processFrame() {
     let gray = new cv.Mat();
     cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
 
-    // -------- Marker Detection & Pose Estimation using js-aruco --------
     try {
-        // Create an AR.Detector from js-aruco.
-       
+        // Detect markers using js-aruco.
         var detector = new AR.Detector();
         let markers = detector.detect(imageData);
-
         updateDebugLabel("Marker Count: " + markers.length);
 
         if (markers.length > 0) {
             // Use the first detected marker.
             let marker = markers[0];
             updateDebugLabel("Marker detected with ID: " + marker.id);
-
-            // Draw the marker's outline (green) on the frame.
             let corners = marker.corners;
+
+            // Draw the marker outline (green).
             for (let i = 0; i < corners.length; i++) {
                 let next = (i + 1) % corners.length;
                 cv.line(
@@ -183,73 +182,86 @@ function processFrame() {
                 );
             }
 
-            // ---- 3D Pose Estimation using js-aruco's POS ----
-            // The POS library requires marker corner coordinates to be centered.
-            let adjustedCorners = [];
-            for (let i = 0; i < corners.length; i++) {
-                adjustedCorners.push({
-                    x: corners[i].x - (canvas.width / 2),
-                    y: (canvas.height / 2) - corners[i].y
-                });
-            }
-            let modelSize = 127; // Marker size in millimeters.
-            // Create a POS.Posit object (using, for example, POS1 version).
-           
-            var posit = new POS.Posit(modelSize, canvas.width);
-            var pose = posit.pose(adjustedCorners);
+            // ----- 3D Pose Estimation Using solvePnP -----
+            // Define marker size (in millimeters) and set up object points.
+            let modelSize = 127;
+            // Object points: marker corners in 3D (marker coordinate system with origin at the center)
+            let objectPoints = cv.matFromArray(4, 1, cv.CV_32FC3, [
+                -modelSize / 2, -modelSize / 2, 0,
+                 modelSize / 2, -modelSize / 2, 0,
+                 modelSize / 2,  modelSize / 2, 0,
+                -modelSize / 2,  modelSize / 2, 0
+            ]);
 
-           
-            // For drawing axes, we need to project 3D points using the estimated pose.
-            // We'll define a simple projection function. (This is an approximation.)
-            function projectPoint(point3d, R, t, f, cx, cy) {
-                // Apply rotation and translation: p_3d = R * point + t.
-                // Here, R is a 3x3 matrix and t is a 3-element vector.
-                let X = R[0][0] * point3d.x + R[0][1] * point3d.y + R[0][2] * point3d.z + t[0];
-                let Y = R[1][0] * point3d.x + R[1][1] * point3d.y + R[1][2] * point3d.z + t[1];
-                let Z = R[2][0] * point3d.x + R[2][1] * point3d.y + R[2][2] * point3d.z + t[2];
-                // Avoid division by zero.
-                if (Z === 0) { Z = 0.0001; }
-                return new cv.Point(
-                    Math.round(f * (X / Z) + cx),
-                    Math.round(f * (Y / Z) + cy)
-                );
-            }
-            // Define camera parameters approximately.
-            let f = canvas.height * 0.8; // Approximate focal length.
+            // Image points: use detected corners (ensure they are in the same order as objectPoints)
+            let imagePoints = cv.matFromArray(4, 1, cv.CV_32FC2, [
+                corners[0].x, corners[0].y,
+                corners[1].x, corners[1].y,
+                corners[2].x, corners[2].y,
+                corners[3].x, corners[3].y
+            ]);
+
+            // Define approximate camera intrinsic parameters.
+            let f = canvas.height; // approximate focal length
             let cx = canvas.width / 2;
             let cy = canvas.height / 2;
-            // Define 3D points for axes in marker coordinate space.
-            let origin3D = { x: 0, y: 0, z: 0 };
-            let xAxis3D = { x: modelSize, y: 0, z: 0 };
-            let yAxis3D = { x: 0, y: modelSize, z: 0 };
-            let zAxis3D = { x: 0, y: 0, z: -modelSize };
+            let cameraMatrix = cv.matFromArray(3, 3, cv.CV_32F, [
+                f, 0, cx,
+                0, f, cy,
+                0, 0, 1
+            ]);
+            let distCoeffs = cv.Mat.zeros(4, 1, cv.CV_32F);
 
-            // The js-aruco POS library returns pose.bestRotation and pose.bestTranslation.
-            // These are used as the 3x3 rotation matrix and translation vector.
-            // Depending on the library version, they might be in a flat array; adjust if necessary.
-            let R = pose.bestRotation; // Expected as a 3x3 nested array.
-            let t = pose.bestTranslation; // Expected as an array of length 3.
+            // Prepare output variables.
+            let rvec = new cv.Mat();
+            let tvec = new cv.Mat();
 
-           
+            // Solve for the pose.
+            let success = cv.solvePnP(objectPoints, imagePoints, cameraMatrix, distCoeffs, rvec, tvec);
+            if (success) {
+                // Define 3D axis points (starting at the marker center).
+                let axisEndpoints = cv.matFromArray(4, 1, cv.CV_32FC3, [
+                    0, 0, 0,                // origin
+                    modelSize, 0, 0,        // x-axis endpoint
+                    0, modelSize, 0,        // y-axis endpoint
+                    0, 0, -modelSize        // z-axis endpoint (into the scene)
+                ]);
 
-            // Project the endpoints.
-            let origin2D = projectPoint(origin3D, R, t, f, cx, cy);
-            let xAxis2D = projectPoint(xAxis3D, R, t, f, cx, cy);
-            let yAxis2D = projectPoint(yAxis3D, R, t, f, cx, cy);
-            let zAxis2D = projectPoint(zAxis3D, R, t, f, cx, cy);
+                // Project the 3D points onto the 2D image.
+                let projectedPoints = new cv.Mat();
+                cv.projectPoints(axisEndpoints, rvec, tvec, cameraMatrix, distCoeffs, projectedPoints);
 
-            // Draw axes: x (red), y (green), z (blue)
-            cv.line(src, origin2D, xAxis2D, new cv.Scalar(255, 0, 0, 255), 2);
-            cv.line(src, origin2D, yAxis2D, new cv.Scalar(0, 255, 0, 255), 2);
-            cv.line(src, origin2D, zAxis2D, new cv.Scalar(0, 0, 255, 255), 2);
+                // Extract the projected points.
+                let origin2D = new cv.Point(projectedPoints.data32F[0], projectedPoints.data32F[1]);
+                let xAxis2D  = new cv.Point(projectedPoints.data32F[2], projectedPoints.data32F[3]);
+                let yAxis2D  = new cv.Point(projectedPoints.data32F[4], projectedPoints.data32F[5]);
+                let zAxis2D  = new cv.Point(projectedPoints.data32F[6], projectedPoints.data32F[7]);
+
+                // Draw the axis lines: x (red), y (green), z (blue).
+                cv.line(src, origin2D, xAxis2D, new cv.Scalar(255, 0, 0, 255), 2);
+                cv.line(src, origin2D, yAxis2D, new cv.Scalar(0, 255, 0, 255), 2);
+                cv.line(src, origin2D, zAxis2D, new cv.Scalar(0, 0, 255, 255), 2);
+
+                // Clean up pose-related Mats.
+                axisEndpoints.delete();
+                projectedPoints.delete();
+            }
+
+            // Clean up Mats used in solvePnP.
+            objectPoints.delete();
+            imagePoints.delete();
+            cameraMatrix.delete();
+            distCoeffs.delete();
+            rvec.delete();
+            tvec.delete();
         } else {
-           updateDebugLabel("No marker detected in this frame.");
+            updateDebugLabel("No marker detected in this frame.");
         }
     } catch (err) {
         updateDebugLabel("Error in marker detection/pose: " + err);
     }
 
-    // -------- Largest Contour Detection (same as original) --------
+    // ----- Largest Contour Detection (as before) -----
     let thresh = new cv.Mat();
     cv.threshold(gray, thresh, 128, 255, cv.THRESH_BINARY);
     let contours = new cv.MatVector();
@@ -282,10 +294,10 @@ function processFrame() {
         contourVector.delete();
     }
 
-    // -------- Display Processed Frame --------
+    // ----- Display Processed Frame -----
     cv.imshow("canvas", src);
 
-    // -------- Draw Crosshairs on Top --------
+    // ----- Draw Crosshairs on Top -----
     let ctx2d = canvas.getContext("2d");
     ctx2d.save();
     ctx2d.globalCompositeOperation = "difference";
@@ -297,7 +309,7 @@ function processFrame() {
     ctx2d.fillRect(chCenterX - 0.5, chCenterY - crosshairSize / 2, 1, crosshairSize);
     ctx2d.restore();
 
-    // Cleanup Mats
+    // Cleanup remaining Mats.
     src.delete();
     gray.delete();
     thresh.delete();
