@@ -215,7 +215,7 @@ function processFrame() {
                 );
             }
             // Define camera parameters approximately.
-            let f = canvas.height; // Approximate focal length.
+            let f = canvas.height * 0.8; // Approximate focal length.
             let cx = canvas.width / 2;
             let cy = canvas.height / 2;
             // Define 3D points for axes in marker coordinate space.
