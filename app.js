@@ -10,6 +10,9 @@ import jsaruco from "https://cdn.skypack.dev/js-aruco@0.1.0";
     console.log("POS:", POS);
 
 let video = document.createElement("video"); // Hidden video element
+// Hide the video element (it will still capture frames)
+video.style.display = "none";
+document.body.appendChild(video);
 let canvas = document.getElementById("canvas");  // Visible canvas for display
 let processingCanvas = document.getElementById("processing-canvas"); // Offscreen canvas for processing
 let ctx = canvas.getContext("2d");
@@ -31,9 +34,6 @@ let useBackCamera = true; // Default to back camera
 let processing = true; // Enable processing
 
 
-// Hide the video element (it will still capture frames)
-video.style.display = "none";
-document.body.appendChild(video);
 
 
 window.addEventListener("load", () => {
@@ -109,6 +109,8 @@ function updateDebugLabel(message) {
     debugLabel.textContent = message;
 }
   
+
+
 // When the video metadata is loaded, set dimensions for both canvases
 async function startCamera(facingMode = "environment") {
     if (currentStream) {
@@ -116,29 +118,42 @@ async function startCamera(facingMode = "environment") {
     }
 
     try {
-        let constraints = { video: { facingMode } };
+        let constraints = {
+            video: {
+                facingMode: facingMode,
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
+            }
+        };
         let stream = await navigator.mediaDevices.getUserMedia(constraints);
         video.srcObject = stream;
         currentStream = stream;
         video.onloadedmetadata = () => {
             console.log("Video dimensions:", video.videoWidth, video.videoHeight);
             video.play();
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            processingCanvas.width = video.videoWidth;
-            processingCanvas.height = video.videoHeight;
+            // Option 1: Set canvas to video dimensions
+            // canvas.width = video.videoWidth;
+            // canvas.height = video.videoHeight;
+
+            // Option 2: Set canvas to full window size
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            processingCanvas.width = window.innerWidth;
+            processingCanvas.height = window.innerHeight;
+
             processFrame(); // Start processing
 
-            // Hide splash screen
+            // Hide splash screen if present
             const splash = document.getElementById("splash-screen");
             if (splash) {
-              splash.style.display = "none";
+                splash.style.display = "none";
             }
         };
     } catch (err) {
         console.error("Error accessing camera:", err);
     }
 }
+
 
 
 

@@ -194,25 +194,17 @@
   }
   
 
-  #canvas {
-    display: block;
-    max-height: 100%;
-    width: auto;
-    
-  }
-
+  
 
   #capture-process {
     position: absolute;
     bottom: 50px;
     left: 0;
-    transform: translateX(50%);
+    transform: translateX(-50%);
     border-radius: 50%;
-    height: 30px;
-    width: 30px;
-
+    height: 60px;
+    width: 60px;
     background: #fff;
-   
     color: #fff;
     cursor: pointer;
   }
