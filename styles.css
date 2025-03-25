@@ -199,11 +199,11 @@
   #capture-process {
     position: absolute;
     bottom: 50px;
-    left: 0;
+    left: 50%;
     transform: translateX(-50%);
     border-radius: 50%;
-    height: 60px;
-    width: 60px;
+    height: 80px;
+    width: 80px;
     background: #fff;
     color: #fff;
     cursor: pointer;
