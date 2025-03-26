@@ -368,12 +368,6 @@ async function captureProcess(event) {
     event.preventDefault();
     updateDebugLabel("Capture & Process button clicked!");
 
-    // Ensure we have the marker homography and a previously detected contour.
-    if (!lastMarkerHomography || !lastLargestContour) {
-        updateDebugLabel("Both an ArUco marker and a largest contour must be present.");
-        return;
-    }
-
     try {
         // Use the video track from the current stream.
         const track = currentStream.getVideoTracks()[0];
@@ -383,7 +377,7 @@ async function captureProcess(event) {
         const photoBlob = await imageCapture.takePhoto();
         updateDebugLabel("High resolution photo captured successfully.");
         
-        // Convert the photo Blob into an Image object.
+        // Convert the photo Blob into an Image.
         const img = new Image();
         img.src = URL.createObjectURL(photoBlob);
         await new Promise((resolve, reject) => {
@@ -398,7 +392,45 @@ async function captureProcess(event) {
         const highResCtx = highResCanvas.getContext("2d");
         highResCtx.drawImage(img, 0, 0);
         
-        // Process the high resolution image to compute a new largest contour.
+        // --- Re-detect the marker in the high resolution image ---
+        let hrImageData = highResCtx.getImageData(0, 0, highResCanvas.width, highResCanvas.height);
+        let detector = new AR.Detector();
+        let markers = detector.detect(hrImageData);
+        
+        if (markers.length > 0) {
+            let marker = markers[0];
+            updateDebugLabel("Marker re-detected in high resolution image with ID: " + marker.id);
+            let corners = marker.corners;
+            // Compute the homography using the new marker corners.
+            let modelSize = 127;
+            let srcPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
+                corners[0].x, corners[0].y,
+                corners[1].x, corners[1].y,
+                corners[2].x, corners[2].y,
+                corners[3].x, corners[3].y
+            ]);
+            let dstPts = cv.matFromArray(4, 1, cv.CV_32FC2, [
+                0, 0,
+                modelSize, 0,
+                modelSize, modelSize,
+                0, modelSize
+            ]);
+            let homography = cv.findHomography(srcPts, dstPts);
+            // Replace the old homography with the new one.
+            if (lastMarkerHomography) { 
+                lastMarkerHomography.delete();
+            }
+            lastMarkerHomography = homography.clone();
+            // Clean up temporary Mats.
+            srcPts.delete();
+            dstPts.delete();
+            homography.delete();
+        } else {
+            updateDebugLabel("No marker detected in the high resolution image.");
+            return;
+        }
+        
+        // --- Process the high resolution image for contour detection ---
         let src = cv.imread(highResCanvas);
         let gray = new cv.Mat();
         cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
@@ -434,16 +466,16 @@ async function captureProcess(event) {
             return;
         }
         
-        // Replace the global largest contour with the new high-res one.
+        // Replace the stored largest contour with the new one.
         if (lastLargestContour) { 
-            lastLargestContour.delete(); 
+            lastLargestContour.delete();
         }
         lastLargestContour = newLargestContour.clone();
         
-        // Compute warped contour points using the stored homography.
+        // --- Warp the new largest contour using the updated homography ---
         let warpedContourData = [];
         let numPoints = newLargestContour.data32S.length / 2;
-        let m = lastMarkerHomography.data64F; // 3x3 homography matrix as a flat array
+        let m = lastMarkerHomography.data64F; // the 3x3 homography matrix stored as a flat array
         for (let i = 0; i < numPoints; i++) {
             let x = newLargestContour.data32S[i * 2];
             let y = newLargestContour.data32S[i * 2 + 1];
@@ -467,10 +499,12 @@ async function captureProcess(event) {
         thresh.delete();
         contours.delete();
         hierarchy.delete();
+        
     } catch (err) {
         updateDebugLabel("Error capturing high resolution image: " + err);
     }
 }
+
 
 
 
