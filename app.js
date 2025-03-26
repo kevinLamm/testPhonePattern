@@ -19,8 +19,8 @@ let ctx = canvas.getContext("2d");
 const captureButton = document.getElementById("capture-process");
 let activePatternIndex = null;
 // Global variables for storing data from each frame
-let lastLargestContour = null;
-let lastMarkerHomography = null; // Homography computed from the marker corners
+//let lastLargestContour = null;
+//let lastMarkerHomography = null; // Homography computed from the marker corners
 
  
 
@@ -108,9 +108,11 @@ function updateDebugLabel(message) {
     const debugLabel = document.getElementById('debug-label');
     debugLabel.textContent = message;
 }
+
+// Global variables for storing data from each frame
+let lastLargestContour = null;
+let lastMarkerHomography = null; // Homography computed from the marker corners
   
-
-
 // When the video metadata is loaded, set dimensions for both canvases
 async function startCamera(facingMode = "environment") {
     if (currentStream) {
@@ -151,9 +153,7 @@ async function startCamera(facingMode = "environment") {
     }
 }
 
-
-
-
+startCamera("environment");
 
 function processFrame() {
     if (!processing) return;
@@ -361,59 +361,115 @@ function processFrame() {
     requestAnimationFrame(processFrame);
 }
 
-
-
-
-
-startCamera("environment");
-
-
-
-
 captureButton.addEventListener("click", captureProcess);
 captureButton.addEventListener("touchstart", captureProcess);
 
-function captureProcess(event) {
+async function captureProcess(event) {
     event.preventDefault();
     updateDebugLabel("Capture & Process button clicked!");
 
-    // Capture the current frame from the processing canvas (for visual reference, if needed)
-    let src = cv.imread(processingCanvas);
-    updateDebugLabel("Image captured successfully.");
-
-    // Check that both the marker homography and the stored largest contour are available.
+    // Ensure we have the marker homography and a previously detected contour.
     if (!lastMarkerHomography || !lastLargestContour) {
         updateDebugLabel("Both an ArUco marker and a largest contour must be present.");
-        src.delete();
         return;
     }
 
-    // Compute warped contour points using the stored homography.
-    // Note: lastMarkerHomography maps points from the marker's image coordinate space to the canonical marker space.
-    // To apply this same transformation to the largest contour, we use its transformation.
-    let warpedContourData = [];
-    let numPoints = lastLargestContour.data32S.length / 2;
-    // Access the homography data (a 3x3 matrix in a flat array)
-    let m = lastMarkerHomography.data64F;
-    for (let i = 0; i < numPoints; i++) {
-        let x = lastLargestContour.data32S[i * 2];
-        let y = lastLargestContour.data32S[i * 2 + 1];
-        let denominator = m[6] * x + m[7] * y + m[8];
-        let warpedX = (m[0] * x + m[1] * y + m[2]) / denominator;
-        let warpedY = (m[3] * x + m[4] * y + m[5]) / denominator;
-        warpedContourData.push({ x: warpedX, y: warpedY });
+    try {
+        // Use the video track from the current stream.
+        const track = currentStream.getVideoTracks()[0];
+        const imageCapture = new ImageCapture(track);
+        
+        // Capture a high-resolution still image.
+        const photoBlob = await imageCapture.takePhoto();
+        updateDebugLabel("High resolution photo captured successfully.");
+        
+        // Convert the photo Blob into an Image object.
+        const img = new Image();
+        img.src = URL.createObjectURL(photoBlob);
+        await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = reject;
+        });
+        
+        // Create an offscreen canvas matching the image dimensions.
+        const highResCanvas = document.createElement("canvas");
+        highResCanvas.width = img.width;
+        highResCanvas.height = img.height;
+        const highResCtx = highResCanvas.getContext("2d");
+        highResCtx.drawImage(img, 0, 0);
+        
+        // Process the high resolution image to compute a new largest contour.
+        let src = cv.imread(highResCanvas);
+        let gray = new cv.Mat();
+        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+        let thresh = new cv.Mat();
+        cv.threshold(gray, thresh, 220, 255, cv.THRESH_BINARY);
+        let contours = new cv.MatVector();
+        let hierarchy = new cv.Mat();
+        cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
+        
+        let newLargestContour = null;
+        let maxArea = 0;
+        let centerX = highResCanvas.width / 2;
+        let centerY = highResCanvas.height / 2;
+        for (let i = 0; i < contours.size(); i++) {
+            let contour = contours.get(i);
+            let area = cv.contourArea(contour);
+            let moments = cv.moments(contour);
+            if (area > maxArea && moments.m00 !== 0) {
+                if (cv.pointPolygonTest(contour, new cv.Point(centerX, centerY), false) >= 0) {
+                    maxArea = area;
+                    newLargestContour = contour;
+                }
+            }
+        }
+        
+        if (!newLargestContour) {
+            updateDebugLabel("No largest contour detected in the high resolution image.");
+            src.delete();
+            gray.delete();
+            thresh.delete();
+            contours.delete();
+            hierarchy.delete();
+            return;
+        }
+        
+        // Replace the global largest contour with the new high-res one.
+        if (lastLargestContour) { 
+            lastLargestContour.delete(); 
+        }
+        lastLargestContour = newLargestContour.clone();
+        
+        // Compute warped contour points using the stored homography.
+        let warpedContourData = [];
+        let numPoints = newLargestContour.data32S.length / 2;
+        let m = lastMarkerHomography.data64F; // 3x3 homography matrix as a flat array
+        for (let i = 0; i < numPoints; i++) {
+            let x = newLargestContour.data32S[i * 2];
+            let y = newLargestContour.data32S[i * 2 + 1];
+            let denominator = m[6] * x + m[7] * y + m[8];
+            let warpedX = (m[0] * x + m[1] * y + m[2]) / denominator;
+            let warpedY = (m[3] * x + m[4] * y + m[5]) / denominator;
+            warpedContourData.push({ x: warpedX, y: warpedY });
+        }
+        
+        // Send the warped contour data to your pattern processing.
+        if (activePatternIndex !== null) {
+            project.patterns[activePatternIndex].contourData = warpedContourData;
+        }
+        renderPatternList();
+        activePatternIndex = null;
+        document.getElementById('camera-view').classList.add('hidden');
+        
+        // Cleanup allocated Mats.
+        src.delete();
+        gray.delete();
+        thresh.delete();
+        contours.delete();
+        hierarchy.delete();
+    } catch (err) {
+        updateDebugLabel("Error capturing high resolution image: " + err);
     }
-
-    // Send the warped contour data to your pattern processing.
-    if (activePatternIndex !== null) {
-        project.patterns[activePatternIndex].contourData = warpedContourData;
-    }
-    renderPatternList();
-    activePatternIndex = null;
-    document.getElementById('camera-view').classList.add('hidden');
-
-    // Cleanup
-    src.delete();
 }
 
 
