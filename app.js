@@ -238,7 +238,7 @@ function detectLargestContour(canvas) {
 function processFrame() {
     if (!processing) return;
     
-    // Draw the current video frame onto the processing canvas.
+    // Draw the current video frame onto the hidden processing canvas.
     let pctx = processingCanvas.getContext("2d");
     pctx.drawImage(video, 0, 0, processingCanvas.width, processingCanvas.height);
     
@@ -265,10 +265,37 @@ function processFrame() {
         updateDebugLabel("No largest contour detected in video frame.");
     }
     
-    // Continue with additional processing and display...
-    // (e.g., drawing contours, axes, crosshairs, etc.)
+    // Now, update the visible canvas with the processed frame.
+    // For example, read the current frame from the processing canvas:
+    let src = cv.imread(processingCanvas);
+    
+    // Optionally, draw overlays (e.g. the largest contour) on the frame:
+    if (lastLargestContour) {
+        let contourVector = new cv.MatVector();
+        contourVector.push_back(lastLargestContour);
+        cv.drawContours(src, contourVector, 0, new cv.Scalar(255, 0, 255, 255), 2);
+        contourVector.delete();
+    }
+    
+    // Display the frame on your visible canvas (assumes your canvas element has id "canvas").
+    cv.imshow("canvas", src);
+    
+    // Optionally, draw crosshairs on top.
+    let ctx2d = canvas.getContext("2d");
+    ctx2d.save();
+    ctx2d.globalCompositeOperation = "difference";
+    ctx2d.fillStyle = "white";
+    let crosshairSize = 20;
+    let chCenterX = canvas.width / 2;
+    let chCenterY = canvas.height / 2;
+    ctx2d.fillRect(chCenterX - crosshairSize / 2, chCenterY - 0.5, crosshairSize, 1);
+    ctx2d.fillRect(chCenterX - 0.5, chCenterY - crosshairSize / 2, 1, crosshairSize);
+    ctx2d.restore();
+    
+    src.delete();
     requestAnimationFrame(processFrame);
 }
+
 
 
 // ---------------- captureProcess (High Resolution Capture) ----------------
