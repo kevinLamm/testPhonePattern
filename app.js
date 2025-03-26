@@ -131,10 +131,7 @@ async function startCamera(facingMode = "environment") {
         video.onloadedmetadata = () => {
             console.log("Video dimensions:", video.videoWidth, video.videoHeight);
             video.play();
-            // Option 1: Set canvas to video dimensions
-            // canvas.width = video.videoWidth;
-            // canvas.height = video.videoHeight;
-
+            
             // Option 2: Set canvas to full window size
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
