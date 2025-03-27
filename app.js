@@ -293,7 +293,7 @@ function processLargestContour(srcMat) {
     
     // Draw the largest contour in magenta.
     if (largestContour) {
-        let largestContour = simplifyContour(largestContour, 0.01);
+       
         let contourVector = new cv.MatVector();
         contourVector.push_back(largestContour);
         cv.drawContours(srcMat, contourVector, 0, new cv.Scalar(255, 0, 255, 255), 2);
@@ -386,7 +386,7 @@ async function captureProcess(event) {
         // Instead of using the full photo size, create an offscreen canvas with 
         // dimensions only double the processingCanvas dimensions.
         const targetWidth = processingCanvas.width * 2;
-        const targetHeight = processingCanvas.height * 2;
+        const targetHeight = processingCanvas.height *2;
         const highResCanvas = document.createElement("canvas");
         highResCanvas.width = targetWidth;
         highResCanvas.height = targetHeight;
@@ -399,7 +399,8 @@ async function captureProcess(event) {
         let src = cv.imread(highResCanvas);
         // Re-run marker detection and contour detection on the high-res image.
         let newHomography = processMarker(src);
-        let newContour = processLargestContour(src);
+        
+        let newContour = simplifyContour(processLargestContour(src), 0.01);
 
         // Check that both the marker homography and the stored largest contour are available.
         if (!lastMarkerHomography || !lastLargestContour) {
