@@ -390,10 +390,10 @@ async function captureProcess(event) {
             img.onerror = reject;
         });
         
-        // Instead of using the full photo size, create an offscreen canvas with 
-        // dimensions only double the processingCanvas dimensions.
-        const targetWidth = processingCanvas.width;
-        const targetHeight = processingCanvas.height;
+       
+        
+        const targetWidth = 1920;
+        const targetHeight = 1080;
         const highResCanvas = document.createElement("canvas");
         highResCanvas.width = targetWidth;
         highResCanvas.height = targetHeight;
@@ -410,7 +410,7 @@ async function captureProcess(event) {
         
         let newContour = processLargestContour(src); 
         
-        newContour = simplifyContour(newContour, 0.005);
+        //newContour = simplifyContour(newContour, 0.005);
        
         // Ensure both a marker (homography) and a largest contour are present.
         if (!newHomography || !newContour) {
