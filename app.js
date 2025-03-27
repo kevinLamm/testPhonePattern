@@ -574,7 +574,7 @@ function captureProcessFallback(event) {
 // ---------------- Event Listeners ----------------
 
 captureButton.addEventListener("click", captureProcessWrapper);
-//captureButton.addEventListener("touchstart", captureProcessWrapper);
+captureButton.addEventListener("touchstart", captureProcessWrapper);
 
 
 
