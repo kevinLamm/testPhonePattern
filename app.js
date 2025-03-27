@@ -130,7 +130,7 @@ function updateDebugLabel(message) {
 }
 
 document.addEventListener('visibilitychange', () => {
-    const cameraView = document.getElementById('camera-view');
+   
     // Only reinitialize the camera if the page is visible and the camera-view is not hidden.
     if (document.visibilityState === 'visible' && !cameraView.classList.contains('hidden')) {
       startCamera("environment");
