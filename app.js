@@ -392,8 +392,8 @@ async function captureProcess(event) {
         
        
         
-        const targetWidth = 1920;
-        const targetHeight = 1080;
+        const targetWidth = processingCanvas.width;
+        const targetHeight = processingCanvas.height;
         const highResCanvas = document.createElement("canvas");
         highResCanvas.width = targetWidth;
         highResCanvas.height = targetHeight;
