@@ -392,8 +392,8 @@ async function captureProcess(event) {
         
         // Instead of using the full photo size, create an offscreen canvas with 
         // dimensions only double the processingCanvas dimensions.
-        const targetWidth = processingCanvas.width * 2;
-        const targetHeight = processingCanvas.height *2;
+        const targetWidth = processingCanvas.width;
+        const targetHeight = processingCanvas.height;
         const highResCanvas = document.createElement("canvas");
         highResCanvas.width = targetWidth;
         highResCanvas.height = targetHeight;
@@ -404,8 +404,6 @@ async function captureProcess(event) {
         
         
           let src = cv.imread(highResCanvas);
-       
-        
         
         // Re-run marker detection and contour detection on the high-res image.
         let newHomography = processMarker(src);
@@ -413,9 +411,7 @@ async function captureProcess(event) {
         let newContour = processLargestContour(src); 
         
         newContour = simplifyContour(newContour, 0.005);
-
-        
-        
+       
         // Ensure both a marker (homography) and a largest contour are present.
         if (!newHomography || !newContour) {
             updateDebugLabel("Both an ArUco marker and a largest contour must be present in the high-res image.");
