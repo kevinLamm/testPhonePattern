@@ -374,92 +374,89 @@ async function captureProcess(event) {
        
         return;
     }
-
-    try {
-        // Capture a high-resolution still using ImageCapture.
-        const track = currentStream.getVideoTracks()[0];
-        const imageCapture = new ImageCapture(track);
-        const photoBlob = await imageCapture.takePhoto();
-        updateDebugLabel("High resolution photo captured successfully.");
-        
-        // Load the photo into an Image.
-        const img = new Image();
-        img.src = URL.createObjectURL(photoBlob);
-        await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = reject;
-        });
-        
-       
-        
-        const targetWidth = processingCanvas.width;
-        const targetHeight = processingCanvas.height;
-        const highResCanvas = document.createElement("canvas");
-        highResCanvas.width = targetWidth;
-        highResCanvas.height = targetHeight;
-        const highResCtx = highResCanvas.getContext("2d");
-        
-        // Now process the highResCanvas image (marker detection, contour detection, etc.)
-        highResCtx.drawImage(img, 0, 0, targetWidth, targetHeight);
-        
-        
-          let src = cv.imread(highResCanvas);
-        
-        // Re-run marker detection and contour detection on the high-res image.
-        //let newHomography = processMarker(src);
-        
-        let newContour = processLargestContour(src); 
-        
-        //newContour = simplifyContour(newContour, 0.005);
-       
-        // Ensure both a marker (homography) and a largest contour are present.
-        if (!newContour) {
-            updateDebugLabel("Largest contour must be present in the high-res image.");
-           //if (newHomography) newHomography.delete();
-           if (newContour) newContour.delete();
+   
+        try {
+            // Capture a high resolution photo using ImageCapture.
+            const track = currentStream.getVideoTracks()[0];
+            const imageCapture = new ImageCapture(track);
+            const photoBlob = await imageCapture.takePhoto();
+            updateDebugLabel("High resolution photo captured successfully.");
+            
+            // Load the photo into an Image.
+            const img = new Image();
+            img.src = URL.createObjectURL(photoBlob);
+            await new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+            });
+            
+            // Instead of using the full photo size, create an offscreen canvas with 
+            // dimensions only double the processingCanvas dimensions.
+            const targetWidth = processingCanvas.width * 2;
+            const targetHeight = processingCanvas.height * 2;
+            const highResCanvas = document.createElement("canvas");
+            highResCanvas.width = targetWidth;
+            highResCanvas.height = targetHeight;
+            const highResCtx = highResCanvas.getContext("2d");
+            
+            // Draw the captured image scaled down to the target dimensions.
+            highResCtx.drawImage(img, 0, 0, targetWidth, targetHeight);
+            
+            // Process the downscaled image as before.
+            let src = cv.imread(highResCanvas);
+            // ... (perform marker detection, contour detection, etc.)
+            
+            // Example: re-run marker and contour detection using shared functions
+            let newHomography = processMarker(src);
+            let newContour = processLargestContour(src);
+            
+            if (!newHomography || !newContour) {
+                updateDebugLabel("Both an ArUco marker and a largest contour must be present in the high-res image.");
+                if (newHomography) newHomography.delete();
+                if (newContour) newContour.delete();
+                src.delete();
+                return;
+            }
+            
+            if (lastMarkerHomography) lastMarkerHomography.delete();
+            lastMarkerHomography = newHomography.clone();
+            newHomography.delete();
+            
+            // Simplify the contour before warping.
+            let simplifiedContour = simplifyContour(newContour, 0.005);
+            newContour.delete();
+            if (lastLargestContour) lastLargestContour.delete();
+            lastLargestContour = simplifiedContour;
+            
+            // Compute warped contour points using the updated homography.
+           
+            let warpedContourData = [];
+            let numPoints = newContour.data32S.length / 2;
+            let m = lastMarkerHomography.data64F; // Homography as a flat 3x3 array.
+            for (let i = 0; i < numPoints; i++) {
+                let x = newContour.data32S[i * 2];
+                let y = newContour.data32S[i * 2 + 1];
+                let denominator = m[6] * x + m[7] * y + m[8];
+                let warpedX = (m[0] * x + m[1] * y + m[2]) / denominator;
+                let warpedY = (m[3] * x + m[4] * y + m[5]) / denominator;
+                warpedContourData.push({ x: warpedX, y: warpedY });
+            }
+            
+            // Send the warped contour data to your pattern processing.
+            if (activePatternIndex !== null) {
+                project.patterns[activePatternIndex].contourData = warpedContourData;
+            }
+            renderPatternList();
+            activePatternIndex = null;
+            document.getElementById('camera-view').classList.add('hidden');
+            
             src.delete();
-            return;
+            newContour.delete();
+        } catch (err) {
+            updateDebugLabel("Error capturing high resolution image: " + err);
         }
-        
-        
-        // Compute warped contour points using the updated homography.
-        let warpedContourData = [];
-        let numPoints = newContour.data32S.length / 2;
-        let m = lastMarkerHomography.data64F; // Homography as a flat 3x3 array.
-        for (let i = 0; i < numPoints; i++) {
-            let x = newContour.data32S[i * 2];
-            let y = newContour.data32S[i * 2 + 1];
-            let denominator = m[6] * x + m[7] * y + m[8];
-            let warpedX = (m[0] * x + m[1] * y + m[2]) / denominator;
-            let warpedY = (m[3] * x + m[4] * y + m[5]) / denominator;
-            warpedContourData.push({ x: warpedX, y: warpedY });
-        }
-        
-        // Pass the warped contour data to your pattern processing.
-        if (activePatternIndex !== null) {
-            project.patterns[activePatternIndex].contourData = warpedContourData;
-        }
-
-        updateDebugLabel("warpedContourData points: " + warpedContourData.length);
-
-        renderPatternList();
-        activePatternIndex = null;
-        document.getElementById('camera-view').classList.add('hidden');
-        
-        src.delete();
-        newContour.delete();
-        newHomography.delete();
-
-
-    
-    } catch (err) {
-        updateDebugLabel("Error capturing high resolution image: " + err);
     }
-
-    lastMarkerHomography = null; 
-    lastLargestContour = null;
     
-}
 
 function captureProcessFallback(event) {
     event.preventDefault();
@@ -565,6 +562,7 @@ function captureProcessFallback(event) {
 
   function captureProcessWrapper(event) {
     if ('ImageCapture' in window && currentStream.getVideoTracks()[0]) {
+        updateDebugLabel("Using ImageCapture");
       captureProcess(event);
     } else {
       captureProcessFallback(event);
