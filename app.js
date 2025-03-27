@@ -377,65 +377,65 @@ async function captureProcess(event) {
    
         try {
             // Capture a high resolution photo using ImageCapture.
-            const track = currentStream.getVideoTracks()[0];
-            const imageCapture = new ImageCapture(track);
-            const photoBlob = await imageCapture.takePhoto();
-            updateDebugLabel("High resolution photo captured successfully.");
+           // const track = currentStream.getVideoTracks()[0];
+           // const imageCapture = new ImageCapture(track);
+          //  const photoBlob = await imageCapture.takePhoto();
+           // updateDebugLabel("High resolution photo captured successfully.");
             
-            // Load the photo into an Image.
-            const img = new Image();
-            img.src = URL.createObjectURL(photoBlob);
-            await new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
-            });
+           // // Load the photo into an Image.
+          //  const img = new Image();
+          //  img.src = URL.createObjectURL(photoBlob);
+          //  await new Promise((resolve, reject) => {
+          //      img.onload = resolve;
+          //      img.onerror = reject;
+          //  });
             
             // Instead of using the full photo size, create an offscreen canvas with 
             // dimensions only double the processingCanvas dimensions.
-            const targetWidth = processingCanvas.width * 2;
-            const targetHeight = processingCanvas.height * 2;
-            const highResCanvas = document.createElement("canvas");
-            highResCanvas.width = targetWidth;
-            highResCanvas.height = targetHeight;
-            const highResCtx = highResCanvas.getContext("2d");
+           // const targetWidth = processingCanvas.width * 2;
+           // const targetHeight = processingCanvas.height * 2;
+           // const highResCanvas = document.createElement("canvas");
+           // highResCanvas.width = targetWidth;
+           // highResCanvas.height = targetHeight;
+           // const highResCtx = highResCanvas.getContext("2d");
             
             // Draw the captured image scaled down to the target dimensions.
-            highResCtx.drawImage(img, 0, 0, targetWidth, targetHeight);
+           // highResCtx.drawImage(img, 0, 0, targetWidth, targetHeight);
             
             // Process the downscaled image as before.
-            let src = cv.imread(highResCanvas);
+           // let src = cv.imread(highResCanvas);
             // ... (perform marker detection, contour detection, etc.)
             
             // Example: re-run marker and contour detection using shared functions
-            let newHomography = processMarker(src);
-            let newContour = processLargestContour(src);
+           // let newHomography = processMarker(src);
+           // let newContour = processLargestContour(src);
             
-            if (!newHomography || !newContour) {
-                updateDebugLabel("Both an ArUco marker and a largest contour must be present in the high-res image.");
-                if (newHomography) newHomography.delete();
-                if (newContour) newContour.delete();
-                src.delete();
-                return;
-            }
+           // if (!newHomography || !newContour) {
+            //    updateDebugLabel("Both an ArUco marker and a largest contour must be present in the high-res image.");
+            //    if (newHomography) newHomography.delete();
+            //    if (newContour) newContour.delete();
+            //    src.delete();
+            //    return;
+           // }
             
-            if (lastMarkerHomography) lastMarkerHomography.delete();
-            lastMarkerHomography = newHomography.clone();
-            newHomography.delete();
+           // if (lastMarkerHomography) lastMarkerHomography.delete();
+           // lastMarkerHomography = newHomography.clone();
+           // newHomography.delete();
             
             // Simplify the contour before warping.
-            let simplifiedContour = simplifyContour(newContour, 0.005);
-            newContour.delete();
+            let simplifiedContour = simplifyContour(lastLargestContour, 0.005);
+            //newContour.delete();
             if (lastLargestContour) lastLargestContour.delete();
             lastLargestContour = simplifiedContour;
             
             // Compute warped contour points using the updated homography.
            
             let warpedContourData = [];
-            let numPoints = newContour.data32S.length / 2;
+            let numPoints = lastLargestContour.data32S.length / 2;
             let m = lastMarkerHomography.data64F; // Homography as a flat 3x3 array.
             for (let i = 0; i < numPoints; i++) {
-                let x = newContour.data32S[i * 2];
-                let y = newContour.data32S[i * 2 + 1];
+                let x = lastLargestContour.data32S[i * 2];
+                let y = lastLargestContour.data32S[i * 2 + 1];
                 let denominator = m[6] * x + m[7] * y + m[8];
                 let warpedX = (m[0] * x + m[1] * y + m[2]) / denominator;
                 let warpedY = (m[3] * x + m[4] * y + m[5]) / denominator;
@@ -451,7 +451,7 @@ async function captureProcess(event) {
             document.getElementById('camera-view').classList.add('hidden');
             
             src.delete();
-            newContour.delete();
+           // newContour.delete();
         } catch (err) {
             updateDebugLabel("Error capturing high resolution image: " + err);
         }
