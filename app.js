@@ -387,12 +387,21 @@ async function captureProcess(event) {
         // Re-run marker detection and contour detection on the high-res image.
         let newHomography = processMarker(src);
         let newContour = processLargestContour(src);
+
+        // Check that both the marker homography and the stored largest contour are available.
+        if (!lastMarkerHomography || !lastLargestContour) {
+            updateDebugLabel("Both an ArUco marker and a largest contour must be present.");
+            if (newHomography) newHomography.delete();
+           if (newContour) newContour.delete();
+            src.delete();
+            return;
+        }
         
         // Ensure both a marker (homography) and a largest contour are present.
         if (!newHomography || !newContour) {
             updateDebugLabel("Both an ArUco marker and a largest contour must be present in the high-res image.");
-            if (newHomography) newHomography.delete();
-            if (newContour) newContour.delete();
+           if (newHomography) newHomography.delete();
+           if (newContour) newContour.delete();
             src.delete();
             return;
         }
