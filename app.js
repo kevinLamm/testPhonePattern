@@ -392,11 +392,12 @@ async function captureProcess(event) {
         highResCanvas.height = targetHeight;
         const highResCtx = highResCanvas.getContext("2d");
         
-        // Draw the captured image scaled down to the target dimensions.
+        // Now process the highResCanvas image (marker detection, contour detection, etc.)
         highResCtx.drawImage(img, 0, 0, targetWidth, targetHeight);
-        
-        // Process the downscaled image as before.
-        let src = cv.imread(highResCanvas);
+        setTimeout(() => {
+            let src = cv.imread(highResCanvas);
+            // Continue with processing...
+        }, 10);
         // Re-run marker detection and contour detection on the high-res image.
         let newHomography = processMarker(src);
         
@@ -459,6 +460,8 @@ async function captureProcess(event) {
 function captureProcessFallback(event) {
     event.preventDefault();
     updateDebugLabel("Capture & Process (fallback) button clicked!");
+
+    
   
     const fileInput = document.getElementById("capture-input");
     // Clear any previous selection
@@ -479,13 +482,30 @@ function captureProcessFallback(event) {
             highResCanvas.width = targetWidth;
             highResCanvas.height = targetHeight;
             const highResCtx = highResCanvas.getContext("2d");
-            highResCtx.drawImage(img, 0, 0, targetWidth, targetHeight);
-            
+           
+
             // Now process the highResCanvas image (marker detection, contour detection, etc.)
+            highResCtx.drawImage(img, 0, 0, targetWidth, targetHeight);
+            setTimeout(() => {
+                let src = cv.imread(highResCanvas);
+                // Continue with processing...
+            }, 10);
+
             let src = cv.imread(highResCanvas);
             
             let newHomography = processMarker(src);
             let newContour = processLargestContour(src);
+
+            // Check that both the marker homography and the stored largest contour are available.
+            if (!lastMarkerHomography || !lastLargestContour) {
+                updateDebugLabel("Both an ArUco marker and a largest contour must be present.");
+                if (newHomography) newHomography.delete();
+                if (newContour) newContour.delete();
+                src.delete();
+                return;
+            }
+            
+            
             
             if (!newHomography || !newContour) {
               updateDebugLabel("Both an ArUco marker and a largest contour must be present in the high-res image.");
