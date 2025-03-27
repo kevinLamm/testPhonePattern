@@ -193,7 +193,51 @@
     min-width: 400px; /* Ensure the container has some width */
   }
   
+  /* Rotate the slider to be vertical */
+#vertical-slider {
+    position: absolute;
+    bottom: 25px;
+    left: 50%;
+    transform: translateX(-50%) rotate(-90deg);
+    width: 150px; /* adjust width as needed */
+    margin: 20px;
+  }
 
+  
+  
+  /* Default thumb style (white) */
+#vertical-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 80px;
+    height: 80px;
+    background: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  /* When pressed, change thumb color to grey */
+  #vertical-slider:active::-webkit-slider-thumb {
+    background: #444;
+  }
+  
+  /* Firefox */
+  #vertical-slider::-moz-range-thumb {
+    width: 80px;
+    height: 80px;
+    background: #fff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  #vertical-slider:active::-moz-range-thumb {
+    background: #444;
+  }
+  
+  
   
 
   #capture-process {

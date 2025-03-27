@@ -16,9 +16,11 @@ document.body.appendChild(video);
 let canvas = document.getElementById("canvas");  // Visible canvas for display
 let processingCanvas = document.getElementById("processing-canvas"); // Offscreen canvas for processing
 let ctx = canvas.getContext("2d");
-const captureButton = document.getElementById("capture-process");
+//const captureButton = document.getElementById("capture-process");
 const cameraView = document.getElementById('camera-view');
 let activePatternIndex = null;
+let threshValue = 12 * 17;
+let threshMax = 255;
 // Global variables for storing data from each frame
 //let lastLargestContour = null;
 //let lastMarkerHomography = null; // Homography computed from the marker corners
@@ -96,29 +98,30 @@ window.addEventListener("load", () => {
   });
   
   document.getElementById('close-camera').addEventListener('click', () => {
-    cameraView.classList.add('hidden');
+    toggleCameraView();
     // Global variables for storing data from each frame
-lastLargestContour = null;
-lastMarkerHomography = null; // Homography computed from the marker corners
+
 
   });
   
 });
 
-function toggleCameraView() {
-    
-    
+function toggleCameraView() {    
     // If the camera view is currently hidden, show it and start the camera.
     if (cameraView.classList.contains('hidden')) {
       cameraView.classList.remove('hidden');
+      requestWakeLock();
       startCamera("environment");
     } else {
       // If it's visible, hide it and stop the camera stream.
       cameraView.classList.add('hidden');
+      releaseWakeLock();
       // Stop the stream if it exists.
       if (currentStream) {
         currentStream.getTracks().forEach(track => track.stop());
         currentStream = null;
+        lastLargestContour = null;
+        lastMarkerHomography = null; // Homography computed from the marker corners
       }
     }
   }
@@ -136,6 +139,27 @@ document.addEventListener('visibilitychange', () => {
       startCamera("environment");
     }
   });
+
+  let wakeLock = null;
+
+async function requestWakeLock() {
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => {
+      console.log('Screen Wake Lock released');
+    });
+    console.log('Screen Wake Lock active');
+  } catch (err) {
+    console.error(`Wake Lock error: ${err.name}, ${err.message}`);
+  }
+}
+
+async function releaseWakeLock() {
+  if (wakeLock !== null) {
+    await wakeLock.release();
+    wakeLock = null;
+  }
+}
   
   
 
@@ -298,7 +322,7 @@ function processLargestContour(srcMat) {
     let gray = new cv.Mat();
     cv.cvtColor(srcMat, gray, cv.COLOR_RGBA2GRAY);
     let thresh = new cv.Mat();
-    cv.threshold(gray, thresh, 220, 255, cv.THRESH_BINARY);
+    cv.threshold(gray, thresh, threshValue, threshMax, cv.THRESH_BINARY);
     let contours = new cv.MatVector();
     let hierarchy = new cv.Mat();
     cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
@@ -447,8 +471,25 @@ async function captureProcess(event) {
 
 // ---------------- Event Listeners ----------------
 
-captureButton.addEventListener("click", captureProcess);
-captureButton.addEventListener("touchstart", captureProcess);
+
+
+// Update globals when the slider moves.
+const slider = document.getElementById("vertical-slider");
+slider.addEventListener("input", function(e) {
+  const sliderValue = parseInt(e.target.value, 10);
+  threshMax = sliderValue < 0 ? 0 : 255;
+  threshValue = Math.abs(sliderValue) * 17;
+  updateDebugLabel(`Slider: ${sliderValue}, threshMax: ${threshMax}, threshValue: ${threshValue}`);
+});
+
+// Trigger captureProcess on mouseup (for desktop) and touchend (for mobile).
+slider.addEventListener("mouseup", function(e) {
+  captureProcess(e);
+});
+slider.addEventListener("touchend", function(e) {
+  captureProcess(e);
+});
+
 
 
 
