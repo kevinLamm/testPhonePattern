@@ -397,7 +397,7 @@ async function captureProcess(event) {
         setTimeout(() => {
             let src = cv.imread(highResCanvas);
             // Continue with processing...
-        }, 10);
+        
         // Re-run marker detection and contour detection on the high-res image.
         let newHomography = processMarker(src);
         
@@ -452,6 +452,8 @@ async function captureProcess(event) {
         
         src.delete();
         newContour.delete();
+
+    }, 10);
     } catch (err) {
         updateDebugLabel("Error capturing high resolution image: " + err);
     }
@@ -489,9 +491,8 @@ function captureProcessFallback(event) {
             setTimeout(() => {
                 let src = cv.imread(highResCanvas);
                 // Continue with processing...
-            }, 10);
+            
 
-            let src = cv.imread(highResCanvas);
             
             let newHomography = processMarker(src);
             let newContour = processLargestContour(src);
@@ -545,10 +546,15 @@ function captureProcessFallback(event) {
             document.getElementById('camera-view').classList.add('hidden');
             
             src.delete();
+        }, 10);
           };
+        
         };
+    
         reader.readAsDataURL(file);
+    
       }
+    
     };
     
     // Trigger the native camera.
