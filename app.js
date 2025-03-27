@@ -137,8 +137,8 @@ async function startCamera(facingMode = "environment") {
             // Option 2: Set canvas to full window size
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            processingCanvas.width = window.innerWidth * 2;
-            processingCanvas.height = window.innerHeight * 2;
+            processingCanvas.width = window.innerWidth;
+            processingCanvas.height = window.innerHeight;
 
             processFrame(); // Start processing
 
@@ -385,8 +385,8 @@ async function captureProcess(event) {
         
         // Instead of using the full photo size, create an offscreen canvas with 
         // dimensions only double the processingCanvas dimensions.
-        const targetWidth = processingCanvas.width;
-        const targetHeight = processingCanvas.height;
+        const targetWidth = processingCanvas.width * 2;
+        const targetHeight = processingCanvas.height * 2;
         const highResCanvas = document.createElement("canvas");
         highResCanvas.width = targetWidth;
         highResCanvas.height = targetHeight;
