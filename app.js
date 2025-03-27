@@ -137,8 +137,8 @@ async function startCamera(facingMode = "environment") {
             // Option 2: Set canvas to full window size
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            processingCanvas.width = window.innerWidth;
-            processingCanvas.height = window.innerHeight;
+            processingCanvas.width = window.innerWidth * 2;
+            processingCanvas.height = window.innerHeight * 2;
 
             processFrame(); // Start processing
 
