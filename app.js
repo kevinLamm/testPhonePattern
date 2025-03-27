@@ -124,8 +124,8 @@ async function startCamera(facingMode = "environment") {
         let constraints = {
             video: {
                 facingMode: facingMode,
-                width: { ideal: window.innerWidth * 2 },
-                height: { ideal: window.innerHeight * 2 }
+                width: { ideal: 1920 },
+                height: { ideal: 1080 }
             }
         };
         let stream = await navigator.mediaDevices.getUserMedia(constraints);
