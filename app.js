@@ -293,6 +293,7 @@ function processLargestContour(srcMat) {
     
     // Draw the largest contour in magenta.
     if (largestContour) {
+        let largestContour = simplifyContour(largestContour, 0.01);
         let contourVector = new cv.MatVector();
         contourVector.push_back(largestContour);
         cv.drawContours(srcMat, contourVector, 0, new cv.Scalar(255, 0, 255, 255), 2);
@@ -306,6 +307,14 @@ function processLargestContour(srcMat) {
     return largestContour;
 }
 
+// Reduce the number of points in the contour using Douglas-Peucker approximation.
+function simplifyContour(contour, epsilonFactor = 0.01) {
+    let approx = new cv.Mat();
+    let arcLen = cv.arcLength(contour, true);
+    let epsilon = epsilonFactor * arcLen;
+    cv.approxPolyDP(contour, approx, epsilon, true);
+    return approx;
+}
 // ---------------- Live Video Processing ----------------
 
 function processFrame() {
@@ -376,8 +385,8 @@ async function captureProcess(event) {
         
         // Instead of using the full photo size, create an offscreen canvas with 
         // dimensions only double the processingCanvas dimensions.
-        const targetWidth = processingCanvas.width * 2;
-        const targetHeight = processingCanvas.height * 2;
+        const targetWidth = processingCanvas.width;
+        const targetHeight = processingCanvas.height;
         const highResCanvas = document.createElement("canvas");
         highResCanvas.width = targetWidth;
         highResCanvas.height = targetHeight;
