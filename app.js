@@ -401,8 +401,10 @@ async function captureProcess(event) {
         
         // Now process the highResCanvas image (marker detection, contour detection, etc.)
         highResCtx.drawImage(img, 0, 0, targetWidth, targetHeight);
+        let src = null;
         setTimeout(() => {
-            let src = cv.imread(highResCanvas);
+            src = cv.imread(highResCanvas);
+        }, 10);
             // Continue with processing...
         
         // Re-run marker detection and contour detection on the high-res image.
@@ -423,18 +425,12 @@ async function captureProcess(event) {
             return;
         }
         
-        // Update global values.
-        if (lastMarkerHomography) lastMarkerHomography.delete();
-        lastMarkerHomography = newHomography.clone();
-        newHomography.delete();
         
-        if (lastLargestContour) lastLargestContour.delete();
-        lastLargestContour = newContour.clone();
         
         // Compute warped contour points using the updated homography.
         let warpedContourData = [];
         let numPoints = newContour.data32S.length / 2;
-        let m = lastMarkerHomography.data64F; // Homography as a flat 3x3 array.
+        let m = newHomography.data64F; // Homography as a flat 3x3 array.
         for (let i = 0; i < numPoints; i++) {
             let x = newContour.data32S[i * 2];
             let y = newContour.data32S[i * 2 + 1];
@@ -448,17 +444,26 @@ async function captureProcess(event) {
         if (activePatternIndex !== null) {
             project.patterns[activePatternIndex].contourData = warpedContourData;
         }
+
+        updateDebugLabel("warpedContourData points: " + warpedContourData.length);
+
         renderPatternList();
         activePatternIndex = null;
         document.getElementById('camera-view').classList.add('hidden');
         
         src.delete();
         newContour.delete();
+        newHomography.delete();
 
-    }, 10);
+
+    
     } catch (err) {
         updateDebugLabel("Error capturing high resolution image: " + err);
     }
+
+    lastMarkerHomography = null; 
+    lastLargestContour = null;
+    
 }
 
 function captureProcessFallback(event) {
