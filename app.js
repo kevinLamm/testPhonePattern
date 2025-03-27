@@ -168,7 +168,7 @@ function processMarker(srcMat) {
     
     if (markers.length > 0) {
         let marker = markers[0];
-        updateDebugLabel("Marker detected with ID: " + marker.id);
+        //updateDebugLabel("Marker detected with ID: " + marker.id);
         let corners = marker.corners;
         
         // Draw marker outline in green.
@@ -548,7 +548,7 @@ function captureProcessFallback(event) {
 // ---------------- Event Listeners ----------------
 
 captureButton.addEventListener("click", captureProcessWrapper);
-captureButton.addEventListener("touchstart", captureProcessWrapper);
+//captureButton.addEventListener("touchstart", captureProcessWrapper);
 
 
 
