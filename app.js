@@ -86,7 +86,6 @@ window.addEventListener("load", () => {
   document.getElementById("marker-btn").addEventListener("click", function() {
     menu.classList.toggle('hidden');
     window.open('Marker.pdf', '_blank'); // Open the PDF in a new tab
-    startCamera("environment");
   });
 
   document.getElementById('settings-btn').addEventListener('click', () => {
@@ -132,7 +131,7 @@ async function startCamera(facingMode = "environment") {
         video.srcObject = stream;
         currentStream = stream;
         video.onloadedmetadata = () => {
-            console.log("Video dimensions:", video.videoWidth, video.videoHeight);
+            updateDebugLabel("Video dimensions: " + video.videoWidth + " x " + video.videoHeight);
             video.play();
             
             // Option 2: Set canvas to full window size
@@ -257,7 +256,7 @@ function processMarker(srcMat) {
         
         return computedHomography;
     } else {
-        updateDebugLabel("No marker detected in frame.");
+        //updateDebugLabel("No marker detected in frame.");
         return null;
     }
 }
