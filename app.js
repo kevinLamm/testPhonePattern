@@ -17,6 +17,7 @@ let canvas = document.getElementById("canvas");  // Visible canvas for display
 let processingCanvas = document.getElementById("processing-canvas"); // Offscreen canvas for processing
 let ctx = canvas.getContext("2d");
 const captureButton = document.getElementById("capture-process");
+const cameraView = document.getElementById('camera-view');
 let activePatternIndex = null;
 // Global variables for storing data from each frame
 //let lastLargestContour = null;
@@ -95,7 +96,7 @@ window.addEventListener("load", () => {
   });
   
   document.getElementById('close-camera').addEventListener('click', () => {
-    document.getElementById('camera-view').classList.add('hidden');
+    cameraView.classList.add('hidden');
     // Global variables for storing data from each frame
 lastLargestContour = null;
 lastMarkerHomography = null; // Homography computed from the marker corners
@@ -104,10 +105,39 @@ lastMarkerHomography = null; // Homography computed from the marker corners
   
 });
 
+function toggleCameraView() {
+    
+    
+    // If the camera view is currently hidden, show it and start the camera.
+    if (cameraView.classList.contains('hidden')) {
+      cameraView.classList.remove('hidden');
+      startCamera("environment");
+    } else {
+      // If it's visible, hide it and stop the camera stream.
+      cameraView.classList.add('hidden');
+      // Stop the stream if it exists.
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+      }
+    }
+  }
+  
+
 function updateDebugLabel(message) {
     const debugLabel = document.getElementById('debug-label');
     debugLabel.textContent = message;
 }
+
+document.addEventListener('visibilitychange', () => {
+    const cameraView = document.getElementById('camera-view');
+    // Only reinitialize the camera if the page is visible and the camera-view is not hidden.
+    if (document.visibilityState === 'visible' && !cameraView.classList.contains('hidden')) {
+      startCamera("environment");
+    }
+  });
+  
+  
 
 // Global variables for storing data from each frame
 let lastLargestContour = null;
@@ -123,8 +153,8 @@ async function startCamera(facingMode = "environment") {
         let constraints = {
             video: {
                 facingMode: facingMode,
-                width: { ideal: 1920 },
-                height: { ideal: 1080 }
+                width: { ideal: window.innerWidth * 4 },
+                height: { ideal: window.innerHeight * 4 }
             }
         };
         let stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -153,7 +183,7 @@ async function startCamera(facingMode = "environment") {
     }
 }
 
-startCamera("environment");
+//startCamera("environment");
 
 // ---------------- Shared Processing Functions ----------------
 
@@ -474,7 +504,7 @@ class Pattern {
       // Set up the camera button for this pattern
       row.querySelector('.open-camera-for-pattern').addEventListener('click', () => {
         activePatternIndex = index;
-        document.getElementById('camera-view').classList.remove('hidden');
+        toggleCameraView();
       });
       
       // Remove pattern
