@@ -406,16 +406,16 @@ async function captureProcess(event) {
           let src = cv.imread(highResCanvas);
         
         // Re-run marker detection and contour detection on the high-res image.
-        let newHomography = processMarker(src);
+        //let newHomography = processMarker(src);
         
         let newContour = processLargestContour(src); 
         
         //newContour = simplifyContour(newContour, 0.005);
        
         // Ensure both a marker (homography) and a largest contour are present.
-        if (!newHomography || !newContour) {
-            updateDebugLabel("Both an ArUco marker and a largest contour must be present in the high-res image.");
-           if (newHomography) newHomography.delete();
+        if (!newContour) {
+            updateDebugLabel("Largest contour must be present in the high-res image.");
+           //if (newHomography) newHomography.delete();
            if (newContour) newContour.delete();
             src.delete();
             return;
@@ -425,7 +425,7 @@ async function captureProcess(event) {
         // Compute warped contour points using the updated homography.
         let warpedContourData = [];
         let numPoints = newContour.data32S.length / 2;
-        let m = newHomography.data64F; // Homography as a flat 3x3 array.
+        let m = lastMarkerHomography.data64F; // Homography as a flat 3x3 array.
         for (let i = 0; i < numPoints; i++) {
             let x = newContour.data32S[i * 2];
             let y = newContour.data32S[i * 2 + 1];
