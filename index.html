@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
   <meta name="theme-color" content="#000000">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-startup-image" href="icon512.png">
@@ -81,11 +83,7 @@
     
     <div id="canvas-container">
       <canvas id="canvas"></canvas>
-      <canvas id="processing-canvas" style="position: absolute; left: -9999px;"></canvas>
-
-      <input id="capture-input" type="file" accept="image/*" capture="environment" style="display:none;">
-
-      
+      <canvas id="processing-canvas" style="position: absolute; left: -9999px; display:none;"></canvas>  
     </div>
     <div id="debug-label"  style="position: absolute; bottom: 200px; left: 10px; color: white; background-color: rgba(0, 0, 0, 0.6); padding: 5px;">
         Debugging messages will appear here.
