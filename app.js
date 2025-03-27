@@ -401,11 +401,11 @@ async function captureProcess(event) {
         
         // Now process the highResCanvas image (marker detection, contour detection, etc.)
         highResCtx.drawImage(img, 0, 0, targetWidth, targetHeight);
-        let src = null;
-        setTimeout(() => {
-            src = cv.imread(highResCanvas);
-        }, 10);
-            // Continue with processing...
+        
+        
+          let src = cv.imread(highResCanvas);
+       
+        
         
         // Re-run marker detection and contour detection on the high-res image.
         let newHomography = processMarker(src);
@@ -424,7 +424,6 @@ async function captureProcess(event) {
             src.delete();
             return;
         }
-        
         
         
         // Compute warped contour points using the updated homography.
