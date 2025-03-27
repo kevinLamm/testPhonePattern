@@ -86,6 +86,7 @@ window.addEventListener("load", () => {
   document.getElementById("marker-btn").addEventListener("click", function() {
     menu.classList.toggle('hidden');
     window.open('Marker.pdf', '_blank'); // Open the PDF in a new tab
+    startCamera("environment");
   });
 
   document.getElementById('settings-btn').addEventListener('click', () => {
@@ -123,8 +124,8 @@ async function startCamera(facingMode = "environment") {
         let constraints = {
             video: {
                 facingMode: facingMode,
-                width: { ideal: 1920 },
-                height: { ideal: 1080 }
+                width: { ideal: window.innerWidth * 2 },
+                height: { ideal: window.innerHeight * 2 }
             }
         };
         let stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -342,7 +343,7 @@ function processFrame() {
     ctx2d.save();
     ctx2d.globalCompositeOperation = "difference";
     ctx2d.fillStyle = "white";
-    let crosshairSize = 20;
+    let crosshairSize = 60;
     let chCenterX = canvas.width / 2;
     let chCenterY = canvas.height / 2;
     ctx2d.fillRect(chCenterX - crosshairSize / 2, chCenterY - 0.5, crosshairSize, 1);
@@ -374,16 +375,20 @@ async function captureProcess(event) {
             img.onerror = reject;
         });
         
-        // Draw the high-res image to an offscreen canvas.
+        // Instead of using the full photo size, create an offscreen canvas with 
+        // dimensions only double the processingCanvas dimensions.
+        const targetWidth = processingCanvas.width * 2;
+        const targetHeight = processingCanvas.height * 2;
         const highResCanvas = document.createElement("canvas");
-        highResCanvas.width = img.width;
-        highResCanvas.height = img.height;
+        highResCanvas.width = targetWidth;
+        highResCanvas.height = targetHeight;
         const highResCtx = highResCanvas.getContext("2d");
-        highResCtx.drawImage(img, 0, 0);
         
-        // Read the high-res image into an OpenCV Mat.
+        // Draw the captured image scaled down to the target dimensions.
+        highResCtx.drawImage(img, 0, 0, targetWidth, targetHeight);
+        
+        // Process the downscaled image as before.
         let src = cv.imread(highResCanvas);
-        
         // Re-run marker detection and contour detection on the high-res image.
         let newHomography = processMarker(src);
         let newContour = processLargestContour(src);
