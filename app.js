@@ -473,22 +473,48 @@ async function captureProcess(event) {
 
 
 
-// Update globals when the slider moves.
 const slider = document.getElementById("vertical-slider");
-slider.addEventListener("input", function(e) {
-  const sliderValue = parseInt(e.target.value, 10);
-  threshMax = sliderValue < 0 ? 0 : 255;
-  threshValue = Math.abs(sliderValue) * 17;
-  updateDebugLabel(`Slider: ${sliderValue}, threshMax: ${threshMax}, threshValue: ${threshValue}`);
+let initialSliderValue = null;
+const slideThreshold = 2; // A change less than 2 units is considered accidental
+
+// On start (mousedown/touchstart), record the slider’s initial value.
+slider.addEventListener("mousedown", () => {
+  initialSliderValue = parseInt(slider.value, 10);
+});
+slider.addEventListener("touchstart", () => {
+  initialSliderValue = parseInt(slider.value, 10);
 });
 
-// Trigger captureProcess on mouseup (for desktop) and touchend (for mobile).
-slider.addEventListener("mouseup", function(e) {
+// Update global thresholds continuously when sliding.
+slider.addEventListener("input", (e) => {
+  const currentValue = parseInt(slider.value, 10);
+  threshMax = currentValue < 0 ? 0 : 255;
+  threshValue = Math.abs(currentValue) * 17;
+  updateDebugLabel(`Slider: ${currentValue}, threshMax: ${threshMax}, threshValue: ${threshValue}`);
+});
+
+// On release, check if the change is accidental.
+slider.addEventListener("mouseup", (e) => {
+  const currentValue = parseInt(slider.value, 10);
+  if (Math.abs(currentValue - initialSliderValue) < slideThreshold) {
+    // If the change is minimal, revert to the initial value.
+    slider.value = initialSliderValue;
+    // Update global thresholds to match the initial value.
+    threshMax = initialSliderValue < 0 ? 0 : 255;
+    threshValue = Math.abs(initialSliderValue) * 17;
+  }
   captureProcess(e);
 });
-slider.addEventListener("touchend", function(e) {
+slider.addEventListener("touchend", (e) => {
+  const currentValue = parseInt(slider.value, 10);
+  if (Math.abs(currentValue - initialSliderValue) < slideThreshold) {
+    slider.value = initialSliderValue;
+    threshMax = initialSliderValue < 0 ? 0 : 255;
+    threshValue = Math.abs(initialSliderValue) * 17;
+  }
   captureProcess(e);
 });
+
 
 
 

@@ -196,25 +196,37 @@
   /* Rotate the slider to be vertical */
 #vertical-slider {
     position: absolute;
-    bottom: 25px;
+    bottom: 50px;
     left: 50%;
     transform: translateX(-50%) rotate(-90deg);
-    width: 150px; /* adjust width as needed */
+    width: 250px; /* adjust width as needed */
     margin: 20px;
+    -webkit-appearance: none;
+  appearance: none;
+  background: transparent; /* Ensure no default background */
   }
 
-  
-  
-  /* Default thumb style (white) */
-#vertical-slider::-webkit-slider-thumb {
-    -webkit-appearance: none;
+  #vertical-slider::-ms-thumb {
     width: 80px;
     height: 80px;
-    background: #fff;
+    background: white;
     border: none;
     border-radius: 50%;
     cursor: pointer;
-    transition: background-color 0.2s;
+  }
+  
+  /* Style the thumb for WebKit browsers */
+#vertical-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 80px;
+    height: 80px;
+    background: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    /* Adjust margin so the thumb is centered on the track */
+    margin-top: -35px; /* tweak this value as needed */
   }
   
   /* When pressed, change thumb color to grey */
@@ -222,21 +234,35 @@
     background: #444;
   }
   
-  /* Firefox */
   #vertical-slider::-moz-range-thumb {
     width: 80px;
     height: 80px;
-    background: #fff;
+    background: white;
     border: none;
     border-radius: 50%;
     cursor: pointer;
-    transition: background-color 0.2s;
   }
   
   #vertical-slider:active::-moz-range-thumb {
     background: #444;
   }
+
   
+  
+  #vertical-slider::-webkit-slider-runnable-track {
+    background: linear-gradient(to right, white 0%, black 50%, white 100%);
+  }
+
+  #vertical-slider::-moz-range-track {
+    background: linear-gradient(to right, white 0%, black 50%, white 100%);
+  }
+  
+  #vertical-slider::-ms-fill-lower {
+    background: linear-gradient(to right, white 0%, black 50%);
+  }
+  #vertical-slider::-ms-fill-upper {
+    background: linear-gradient(to right, black 50%, white 100%);
+  }
   
   
 
