@@ -19,12 +19,11 @@ let ctx = canvas.getContext("2d");
 //const captureButton = document.getElementById("capture-process");
 const cameraView = document.getElementById('camera-view');
 let activePatternIndex = null;
-let threshValue = 12 * 17;
-let threshMax = 255;
-let threshType = cv.THRESH_BINARY;
+let threshValue = 220;
+let threshInvert = false;
 // Global variables for storing data from each frame
-//let lastLargestContour = null;
-//let lastMarkerHomography = null; // Homography computed from the marker corners
+let lastLargestContour = null;
+let lastMarkerHomography = null; // Homography computed from the marker corners
 
  
 
@@ -164,9 +163,7 @@ async function releaseWakeLock() {
   
   
 
-// Global variables for storing data from each frame
-let lastLargestContour = null;
-let lastMarkerHomography = null; // Homography computed from the marker corners
+
   
 // When the video metadata is loaded, set dimensions for both canvases
 async function startCamera(facingMode = "environment") {
@@ -323,7 +320,10 @@ function processLargestContour(srcMat) {
     let gray = new cv.Mat();
     cv.cvtColor(srcMat, gray, cv.COLOR_RGBA2GRAY);
     let thresh = new cv.Mat();
-    cv.threshold(gray, thresh, threshValue, threshMax, threshType);
+    cv.threshold(gray, thresh, threshValue, 255, cv.THRESH_BINARY);
+    if (threshInvert){
+        cv.bitwise_not(thresh, thresh);
+    }
     let contours = new cv.MatVector();
     let hierarchy = new cv.Mat();
     cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
@@ -507,9 +507,9 @@ slider.addEventListener("touchstart", () => {
 // Update global thresholds continuously when sliding.
 slider.addEventListener("input", (e) => {
   const currentValue = parseInt(slider.value, 10);
-  threshMax = currentValue < 0 ? 0 : 255;
-  threshValue = Math.abs(currentValue) * 17;
-  updateDebugLabel(`Slider: ${currentValue}, threshMax: ${threshMax}, threshValue: ${threshValue}`);
+  threshInvert = currentValue < 0 ? true : false;
+  threshValue = Math.abs(currentValue);
+  
 });
 
 // On release, check if less than 1 second has elapsed. If so, revert the slider value.
@@ -519,9 +519,8 @@ slider.addEventListener("mouseup", (e) => {
     // Revert slider value to initial
     slider.value = initialSliderValue;
     // Update global thresholds to match the initial value.
-    threshMax = initialSliderValue < 0 ? 0 : 255;
-    threshType = initialSliderValue < 0 ? cv.THRESH_BINARY_INV : cv.THRESH_BINARY;
-    threshValue = Math.abs(initialSliderValue) * 17;
+    threshInvert = initialSliderValue < 0 ? true : false;
+    threshValue = Math.abs(initialSliderValue);
   }
   captureProcess(e);
 });
@@ -529,9 +528,8 @@ slider.addEventListener("touchend", (e) => {
   const elapsedTime = Date.now() - sliderStartTime;
   if (elapsedTime < 1000) {
     slider.value = initialSliderValue;
-    threshMax = initialSliderValue < 0 ? 0 : 255;
-    threshType = initialSliderValue < 0 ? cv.THRESH_BINARY_INV : cv.THRESH_BINARY;
-    threshValue = Math.abs(initialSliderValue) * 17;
+    threshInvert = initialSliderValue < 0 ? true : false;
+    threshValue = Math.abs(initialSliderValue);
   }
   captureProcess(e);
 });
