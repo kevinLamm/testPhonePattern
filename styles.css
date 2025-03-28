@@ -201,7 +201,7 @@
     bottom: 200px;
     left: 50%;
     transform: translateX(-50%);
-    width: 200px; /* adjust width as needed */
+    width: 150px; /* adjust width as needed */
     
     -webkit-appearance: none;
     -webkit-tap-highlight-color: transparent; /* removes blue highlight on tap */
@@ -213,7 +213,7 @@
   #vertical-slider::-ms-thumb {
     width: 80px;
     height: 80px;
-    background: radial-gradient(circle, transparent 60%, white 55%, transparent 2%);
+    background: radial-gradient(circle, transparent 60%, white 60%);
     border: none;
     border-radius: 50%;
     border: none;
@@ -227,7 +227,7 @@
     appearance: none;
     width: 80px;
     height: 80px;
-    background: radial-gradient(circle, transparent 60%, white 55%, transparent 2%);
+    background: radial-gradient(circle, transparent 60%, white 60%);
     border: none;
     border-radius: 50%;
     border: none;
@@ -239,43 +239,43 @@
   
   /* When pressed, change thumb color to grey */
   #vertical-slider:active::-webkit-slider-thumb {
-    background: radial-gradient(circle, #444 30%, transparent 30%, #444 30%);
+    background: radial-gradient(circle, transparent 60%, #bbb 60%);
   }
   
   #vertical-slider::-moz-range-thumb {
     width: 80px;
     height: 80px;
-    background: white;
+    background: radial-gradient(circle, transparent 60%, white 60%);
     border: none;
     border-radius: 50%;
     cursor: pointer;
   }
   
   #vertical-slider:active::-moz-range-thumb {
-    background: #444;
+    background: radial-gradient(circle, transparent 60%, #bbb 60%);
   }
 
   
   
   #vertical-slider::-webkit-slider-runnable-track {
-    background: linear-gradient(to right, white 0%, black 40%, black 60%, white 100%);
+    background: linear-gradient(to right, white 0%, black 45%, black 55%, white 100%);
     border-radius: 10px;
     height:20px;
   }
 
   #vertical-slider::-moz-range-track {
-    background: linear-gradient(to right,  white 0%, black 40%, black 60%, white 100%);
+    background: linear-gradient(to right, white 0%, black 45%, black 55%, white 100%);
     border-radius: 10px;
     height:20px;
   }
   
   #vertical-slider::-ms-fill-lower {
-    background: linear-gradient(to right, white 0%, black 40%, black 50%);
+    background: linear-gradient(to right, white 0%, black 45%, black 50%);
     border-radius: 10px;
     height:20px;
   }
   #vertical-slider::-ms-fill-upper {
-    background: linear-gradient(to right, black 50%, black 60%, white 100%);
+    background: linear-gradient(to right, black 50%, black 55%, white 100%);
     border-radius: 10px;
     height:20px;
   }

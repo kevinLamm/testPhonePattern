@@ -125,6 +125,29 @@ function toggleCameraView() {
       }
     }
   }
+
+  video.addEventListener("stalled", () => {
+    if (currentStream) {
+    console.warn("Video stalled, restarting camera...");
+    currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+        lastLargestContour = null;
+        lastMarkerHomography = null; // Homography computed from the marker corners
+    startCamera("environment");
+    }
+  });
+  
+  video.addEventListener("error", (e) => {
+    if (currentStream) {
+    console.error("Video error:", e);
+    currentStream.getTracks().forEach(track => track.stop());
+        currentStream = null;
+        lastLargestContour = null;
+        lastMarkerHomography = null; // Homography computed from the marker corners
+    startCamera("environment");
+    }
+  });
+  
   
 
 function updateDebugLabel(message) {
