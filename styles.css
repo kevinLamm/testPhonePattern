@@ -225,19 +225,19 @@
     appearance: none;
     width: 80px;
     height: 80px;
-    background: radial-gradient(circle, transparent 60%, white 60%);
+    background: radial-gradient(circle, white 30%, transparent 30%, white 30%);
     border: none;
     border-radius: 50%;
     border: none;
     cursor: pointer;
     outline: none;
     /* Adjust margin so the thumb is centered on the track */
-    margin-top: -20px; /* tweak this value as needed */
+    margin-top: -30px; /* tweak this value as needed */
   }
   
   /* When pressed, change thumb color to grey */
   #vertical-slider:active::-webkit-slider-thumb {
-    background: #444;
+    background: radial-gradient(circle, #444 30%, transparent 30%, #444 30%);
   }
   
   #vertical-slider::-moz-range-thumb {
