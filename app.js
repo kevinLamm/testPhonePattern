@@ -492,14 +492,16 @@ async function captureProcess(event) {
 
 const slider = document.getElementById("vertical-slider");
 let initialSliderValue = null;
-const slideThreshold = 2; // A change less than 2 units is considered accidental
+let sliderStartTime = null;
 
-// On start (mousedown/touchstart), record the slider’s initial value.
+// On start (mousedown/touchstart), record the slider’s initial value and the current time.
 slider.addEventListener("mousedown", () => {
   initialSliderValue = parseInt(slider.value, 10);
+  sliderStartTime = Date.now();
 });
 slider.addEventListener("touchstart", () => {
   initialSliderValue = parseInt(slider.value, 10);
+  sliderStartTime = Date.now();
 });
 
 // Update global thresholds continuously when sliding.
@@ -510,11 +512,11 @@ slider.addEventListener("input", (e) => {
   updateDebugLabel(`Slider: ${currentValue}, threshMax: ${threshMax}, threshValue: ${threshValue}`);
 });
 
-// On release, check if the change is accidental.
+// On release, check if less than 1 second has elapsed. If so, revert the slider value.
 slider.addEventListener("mouseup", (e) => {
-  const currentValue = parseInt(slider.value, 10);
-  if (Math.abs(currentValue - initialSliderValue) < slideThreshold) {
-    // If the change is minimal, revert to the initial value.
+  const elapsedTime = Date.now() - sliderStartTime;
+  if (elapsedTime < 1000) {
+    // Revert slider value to initial
     slider.value = initialSliderValue;
     // Update global thresholds to match the initial value.
     threshMax = initialSliderValue < 0 ? 0 : 255;
@@ -524,8 +526,8 @@ slider.addEventListener("mouseup", (e) => {
   captureProcess(e);
 });
 slider.addEventListener("touchend", (e) => {
-  const currentValue = parseInt(slider.value, 10);
-  if (Math.abs(currentValue - initialSliderValue) < slideThreshold) {
+  const elapsedTime = Date.now() - sliderStartTime;
+  if (elapsedTime < 1000) {
     slider.value = initialSliderValue;
     threshMax = initialSliderValue < 0 ? 0 : 255;
     threshType = initialSliderValue < 0 ? cv.THRESH_BINARY_INV : cv.THRESH_BINARY;
