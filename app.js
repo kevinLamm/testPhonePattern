@@ -411,6 +411,22 @@ function processFrame() {
     let chCenterY = canvas.height / 2;
     ctx2d.fillRect(chCenterX - crosshairSize / 2, chCenterY - 0.5, crosshairSize, 1);
     ctx2d.fillRect(chCenterX - 0.5, chCenterY - crosshairSize / 2, 1, crosshairSize);
+    // Draw a left-facing chevron in the top left corner.
+    // Define margin and chevron dimensions.
+    const chevronX = 20; // left margin
+    const chevronY = 20; // top margin
+    const chevronWidth = 30; // horizontal size of chevron
+    const chevronHeight = 30; // vertical size of chevron
+    
+    ctx2d.beginPath();
+    // Draw a chevron using three points: 
+    // top right, middle left, bottom right.
+    ctx2d.moveTo(chevronX + chevronWidth, chevronY); // top right of chevron
+    ctx2d.lineTo(chevronX, chevronY + chevronHeight / 2); // middle left (the tip)
+    ctx2d.lineTo(chevronX + chevronWidth, chevronY + chevronHeight); // bottom right
+    ctx2d.lineWidth = 4;
+    ctx2d.strokeStyle = "white";
+    ctx2d.stroke();
     ctx2d.restore();
     
     src.delete();
