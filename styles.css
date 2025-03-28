@@ -196,11 +196,11 @@
   /* Rotate the slider to be vertical */
 #vertical-slider {
     position: absolute;
-    bottom: 50px;
+    bottom: 100px;
     left: 50%;
     transform: translateX(-50%);
-    width: 250px; /* adjust width as needed */
-    margin: 20px;
+    width: 200px; /* adjust width as needed */
+    
     -webkit-appearance: none;
   appearance: none;
   background: transparent; /* Ensure no default background */
@@ -226,7 +226,7 @@
     border-radius: 50%;
     cursor: pointer;
     /* Adjust margin so the thumb is centered on the track */
-    /* margin-top: -35px; tweak this value as needed */
+    margin-top: -80px; /* tweak this value as needed */
   }
   
   /* When pressed, change thumb color to grey */

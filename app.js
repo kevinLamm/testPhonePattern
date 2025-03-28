@@ -501,7 +501,7 @@ slider.addEventListener("mouseup", (e) => {
     // If the change is minimal, revert to the initial value.
     slider.value = initialSliderValue;
     // Update global thresholds to match the initial value.
-    
+    threshMax = initialSliderValue < 0 ? 0 : 255;
     threshType = initialSliderValue < 0 ? cv.THRESH_BINARY_INV : cv.THRESH_BINARY;
     threshValue = Math.abs(initialSliderValue) * 17;
   }
@@ -511,7 +511,7 @@ slider.addEventListener("touchend", (e) => {
   const currentValue = parseInt(slider.value, 10);
   if (Math.abs(currentValue - initialSliderValue) < slideThreshold) {
     slider.value = initialSliderValue;
-    
+    threshMax = initialSliderValue < 0 ? 0 : 255;
     threshType = initialSliderValue < 0 ? cv.THRESH_BINARY_INV : cv.THRESH_BINARY;
     threshValue = Math.abs(initialSliderValue) * 17;
   }
