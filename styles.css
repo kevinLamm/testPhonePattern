@@ -198,7 +198,7 @@
     position: absolute;
     bottom: 50px;
     left: 50%;
-    transform: translateX(-50%) rotate(-90deg);
+    transform: translateX(-50%);
     width: 250px; /* adjust width as needed */
     margin: 20px;
     -webkit-appearance: none;
@@ -226,7 +226,7 @@
     border-radius: 50%;
     cursor: pointer;
     /* Adjust margin so the thumb is centered on the track */
-    margin-top: -35px; /* tweak this value as needed */
+    /* margin-top: -35px; tweak this value as needed */
   }
   
   /* When pressed, change thumb color to grey */
@@ -251,17 +251,25 @@
   
   #vertical-slider::-webkit-slider-runnable-track {
     background: linear-gradient(to right, white 0%, black 50%, white 100%);
+    border-radius: 10px;
+    height:20px;
   }
 
   #vertical-slider::-moz-range-track {
     background: linear-gradient(to right, white 0%, black 50%, white 100%);
+    border-radius: 10px;
+    height:20px;
   }
   
   #vertical-slider::-ms-fill-lower {
     background: linear-gradient(to right, white 0%, black 50%);
+    border-radius: 10px;
+    height:20px;
   }
   #vertical-slider::-ms-fill-upper {
     background: linear-gradient(to right, black 50%, white 100%);
+    border-radius: 10px;
+    height:20px;
   }
   
   

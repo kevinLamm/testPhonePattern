@@ -21,6 +21,7 @@ const cameraView = document.getElementById('camera-view');
 let activePatternIndex = null;
 let threshValue = 12 * 17;
 let threshMax = 255;
+let threshType = cv.THRESH_BINARY;
 // Global variables for storing data from each frame
 //let lastLargestContour = null;
 //let lastMarkerHomography = null; // Homography computed from the marker corners
@@ -322,7 +323,7 @@ function processLargestContour(srcMat) {
     let gray = new cv.Mat();
     cv.cvtColor(srcMat, gray, cv.COLOR_RGBA2GRAY);
     let thresh = new cv.Mat();
-    cv.threshold(gray, thresh, threshValue, threshMax, cv.THRESH_BINARY);
+    cv.threshold(gray, thresh, threshValue, threshMax, threshType);
     let contours = new cv.MatVector();
     let hierarchy = new cv.Mat();
     cv.findContours(thresh, contours, hierarchy, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE);
@@ -500,7 +501,8 @@ slider.addEventListener("mouseup", (e) => {
     // If the change is minimal, revert to the initial value.
     slider.value = initialSliderValue;
     // Update global thresholds to match the initial value.
-    threshMax = initialSliderValue < 0 ? 0 : 255;
+    
+    threshType = initialSliderValue < 0 ? cv.THRESH_BINARY_INV : cv.THRESH_BINARY;
     threshValue = Math.abs(initialSliderValue) * 17;
   }
   captureProcess(e);
@@ -509,7 +511,8 @@ slider.addEventListener("touchend", (e) => {
   const currentValue = parseInt(slider.value, 10);
   if (Math.abs(currentValue - initialSliderValue) < slideThreshold) {
     slider.value = initialSliderValue;
-    threshMax = initialSliderValue < 0 ? 0 : 255;
+    
+    threshType = initialSliderValue < 0 ? cv.THRESH_BINARY_INV : cv.THRESH_BINARY;
     threshValue = Math.abs(initialSliderValue) * 17;
   }
   captureProcess(e);
