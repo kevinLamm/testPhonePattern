@@ -202,17 +202,21 @@
     width: 200px; /* adjust width as needed */
     
     -webkit-appearance: none;
+    -webkit-tap-highlight-color: transparent; /* removes blue highlight on tap */
   appearance: none;
   background: transparent; /* Ensure no default background */
+  outline: none;
   }
 
   #vertical-slider::-ms-thumb {
     width: 80px;
     height: 80px;
-    background: white;
+    background: radial-gradient(circle, transparent 60%, white 60%);
     border: none;
     border-radius: 50%;
-    cursor: pointer;
+    border: none;
+  cursor: pointer;
+  outline: none;
   }
   
   /* Style the thumb for WebKit browsers */
@@ -221,12 +225,14 @@
     appearance: none;
     width: 80px;
     height: 80px;
-    background: white;
+    background: radial-gradient(circle, transparent 60%, white 60%);
     border: none;
     border-radius: 50%;
+    border: none;
     cursor: pointer;
+    outline: none;
     /* Adjust margin so the thumb is centered on the track */
-    margin-top: -80px; /* tweak this value as needed */
+    margin-top: -40px; /* tweak this value as needed */
   }
   
   /* When pressed, change thumb color to grey */
@@ -250,24 +256,24 @@
   
   
   #vertical-slider::-webkit-slider-runnable-track {
-    background: linear-gradient(to right, white 0%, black 50%, white 100%);
+    background: linear-gradient(to right, white 0%, black 40%, black 60%, white 100%);
     border-radius: 10px;
     height:20px;
   }
 
   #vertical-slider::-moz-range-track {
-    background: linear-gradient(to right, white 0%, black 50%, white 100%);
+    background: linear-gradient(to right,  white 0%, black 40%, black 60%, white 100%);
     border-radius: 10px;
     height:20px;
   }
   
   #vertical-slider::-ms-fill-lower {
-    background: linear-gradient(to right, white 0%, black 50%);
+    background: linear-gradient(to right, white 0%, black 40%, black 50%);
     border-radius: 10px;
     height:20px;
   }
   #vertical-slider::-ms-fill-upper {
-    background: linear-gradient(to right, black 50%, white 100%);
+    background: linear-gradient(to right, black 50%, black 60%, white 100%);
     border-radius: 10px;
     height:20px;
   }
