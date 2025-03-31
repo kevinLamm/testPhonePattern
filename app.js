@@ -622,7 +622,7 @@ class Pattern {
 
        // Set up the edit button for this pattern
       row.querySelector('edit-pattern').addEventListener('click', () => {
-       
+        activePatternIndex = index;
       });
       
       // Set up the camera button for this pattern
