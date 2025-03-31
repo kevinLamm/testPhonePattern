@@ -591,7 +591,7 @@ class Pattern {
       
       row.innerHTML = `
       <div id="pattern-preview-container">
-      <i data-lucide="camera"></i>  
+      <i id="icon-camera" data-lucide="camera"></i>  
       <canvas class="pattern-preview" width="350" height="200"></canvas>
       </div>
         <input type="text" class="pattern-description" placeholder="Description" value="${pattern.description}">
