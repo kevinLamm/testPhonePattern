@@ -593,7 +593,7 @@ class Pattern {
       <div id="pattern-preview-container">
       <i class="icon-camera" data-lucide="camera"></i>  
       <canvas class="pattern-preview" width="350" height="200"></canvas>
-      <button class="edit-pattern"><i data-lucide="pencil"></i></button>
+      <button class="edit-pattern hidden"><i data-lucide="pencil"></i></button>
       </div>
         <input type="text" class="pattern-description" placeholder="Description" value="${pattern.description}">
         <label>Width</label>
@@ -621,10 +621,7 @@ class Pattern {
 
        // Set up the edit button for this pattern
       row.querySelector('edit-pattern').addEventListener('click', () => {
-        const targetElement = row.querySelector('.edit-pattern'); // replace with your actual selector
-        if (targetElement) {
-          targetElement.classList.toggle('hidden');
-        }
+       
       });
       
       // Set up the camera button for this pattern
