@@ -386,7 +386,7 @@ function processLargestContour(srcMat) {
 }
 
 // Reduce the number of points in the contour using Douglas-Peucker approximation.
-function simplifyContour(contour, epsilonFactor = 0.01) {
+function simplifyContour(contour, epsilonFactor = 0.002) {
     let approx = new cv.Mat();
     let arcLen = cv.arcLength(contour, true);
     let epsilon = epsilonFactor * arcLen;
