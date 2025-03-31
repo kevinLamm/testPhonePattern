@@ -591,7 +591,7 @@ class Pattern {
       
       row.innerHTML = `
       <div id="pattern-preview-container">
-      <i data-lucide="camera"></i>  
+      <i class="icon-camera" data-lucide="camera"></i>  
       <canvas class="pattern-preview" width="350" height="200"></canvas>
       <button class="edit-pattern"><i data-lucide="pencil"></i></button>
       </div>
@@ -617,6 +617,14 @@ class Pattern {
       });
       row.querySelector('.pattern-height').addEventListener('input', e => {
         project.patterns[index].height = parseFloat(e.target.value);
+      });
+
+       // Set up the edit button for this pattern
+      row.querySelector('edit-pattern').addEventListener('click', () => {
+        const targetElement = row.querySelector('.edit-pattern'); // replace with your actual selector
+        if (targetElement) {
+          targetElement.classList.toggle('hidden');
+        }
       });
       
       // Set up the camera button for this pattern
@@ -653,8 +661,8 @@ class Pattern {
         // Clear canvas or show a placeholder
         const ctx = previewCanvas.getContext("2d");
         ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+        //ctx.fillStyle = "#fff";
+        //ctx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
       }
       
       // Insert the row before the "Add Pattern" button
@@ -708,6 +716,8 @@ class Pattern {
     ctx.strokeStyle = "black";
     ctx.lineWidth = 1;
     ctx.stroke();
+
+
   }
   
   
