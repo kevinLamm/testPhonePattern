@@ -320,6 +320,7 @@
   }
   
   #pattern-preview-container {
+    display:block;
     position: relative;
   }
   
