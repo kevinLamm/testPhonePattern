@@ -593,9 +593,10 @@ class Pattern {
       <div id="pattern-preview-container">
       <i class="icon-camera" data-lucide="camera"></i>  
       <canvas class="pattern-preview" width="350" height="200"></canvas>
+      <button class="edit-pattern"><i data-lucide="pencil"></i></button>
       
       </div>
-      <button class="edit-pattern"><i data-lucide="pencil"></i></button>
+      
         <input type="text" class="pattern-description" placeholder="Description" value="${pattern.description}">
         <label>Width</label>
         <input type="number" class="pattern-width" placeholder="Width" value="${pattern.width}">
@@ -621,7 +622,7 @@ class Pattern {
       });
 
        // Set up the edit button for this pattern
-      row.querySelector('edit-pattern').addEventListener('click', () => {
+      row.querySelector('.edit-pattern').addEventListener('click', () => {
         activePatternIndex = index;
       });
       
