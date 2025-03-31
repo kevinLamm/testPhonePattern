@@ -593,7 +593,7 @@ class Pattern {
       <div id="pattern-preview-container">
       <i class="icon-camera" data-lucide="camera"></i>  
       <canvas class="pattern-preview" width="350" height="200"></canvas>
-      <button class="edit-pattern hidden"><i data-lucide="pencil"></i></button>
+      <button class="edit-pattern"><i data-lucide="pencil"></i></button>
       </div>
         <input type="text" class="pattern-description" placeholder="Description" value="${pattern.description}">
         <label>Width</label>
