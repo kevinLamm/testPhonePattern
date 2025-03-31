@@ -590,7 +590,10 @@ class Pattern {
       row.setAttribute('data-index', index);
       
       row.innerHTML = `
-        <canvas class="pattern-preview" width="350" height="150"></canvas>
+      <div id="pattern-preview-container">
+      <i data-lucide="camera"></i>  
+      <canvas class="pattern-preview" width="350" height="200"></canvas>
+      </div>
         <input type="text" class="pattern-description" placeholder="Description" value="${pattern.description}">
         <label>Width</label>
         <input type="number" class="pattern-width" placeholder="Width" value="${pattern.width}">
