@@ -529,6 +529,7 @@ slider.addEventListener("touchstart", () => {
 
 // Update global thresholds continuously when sliding.
 slider.addEventListener("input", (e) => {
+  const elapsedTime = Date.now() - sliderStartTime;
     if (elapsedTime < 1000) {
         // Revert slider value to initial
         slider.value = initialSliderValue;
