@@ -125,9 +125,8 @@
   /* Preview Canvas in each pattern row */
   .pattern-preview {
     border: 1px solid #ccc;
-    background: #eee;
-    width: 350px;
-    height: 150px;
+   
+    
   }
   .row-buttons-container {
     display: flex;
@@ -335,4 +334,11 @@
   #pattern-preview-container .pattern-preview {
     position: relative;
     z-index: 1;
+  }
+
+  #pattern-preview-container .edit-pattern {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    z-index: 2;
   }
